@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="fw-bold mb-4">Edit Subject</h3>
+
+                <form action="/subjects/edit/{{ user_subject.id }}/" method="POST">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Subject Name</label>
+                        <input type="text" name="name" class="form-control" 
+                            value="{{ user_subject.subject.name }}">
+                        {% if errors.name %}
+                            <small class="text-danger">{{ errors.name }}</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Exam Date</label>
+                        <input type="date" name="exam_date" class="form-control" 
+                            value="{{ user_subject.exam_date }}">
+                        {% if errors.exam_date %}
+                            <small class="text-danger">{{ errors.exam_date }}</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Priority</label>
+                        <select name="priority" class="form-select">
+                            <option value="low" {% if user_subject.priority == 'low' %}selected{% endif %}>Low</option>
+                            <option value="medium" {% if user_subject.priority == 'medium' %}selected{% endif %}>Medium</option>
+                            <option value="high" {% if user_subject.priority == 'high' %}selected{% endif %}>High</option>
+                        </select>
+                        {% if errors.priority %}
+                            <small class="text-danger">{{ errors.priority }}</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+                        <a href="/subjects/" class="btn btn-outline-secondary w-100">Cancel</a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
