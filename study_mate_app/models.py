@@ -1,6 +1,84 @@
 from django.db import models
+import re
+import datetime
+import bcrypt
+
+EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+$')
 
 # Create your models here.
+
+class UserManager(models.Manager):
+    def validate_register(self, data):
+        errors={}
+        first_name = data.get('first_name' , '').strip()
+        if not first_name:
+            errors['first_name'] = 'First name is required.'
+        elif len(first_name) <= 2:
+            errors['first_name'] = 'First name must be at least 2 characters long.'
+        last_name = data.get('last_name' , '').strip()
+        if not last_name:
+            errors['last_name'] = 'Last name is required.'
+        elif len(last_name) <= 2:
+            errors['last_name'] = 'Last name must be at least 2 characters long.'
+        email = data.get('email' , '').strip()
+        if not email:
+            errors['email'] = 'Email address is required.'
+        elif not EMAIL_REGEX.match(email):
+            errors['email'] = 'Invalid email'
+        elif User.objects.filter(email=email).first():
+            errors['email'] = 'This email address already exists. Please revise and try again.'
+        password = data.get('password', '').strip()
+        confirm_password=data.get('confirm_password', '').strip()
+        if not password:
+            errors['password'] = 'Password is required.'
+        elif len(password) < 6 :
+            errors['password'] = 'Password must be at least 6 characters.'
+        if password != confirm_password:
+            errors['confirm_password'] = 'Passwords do not match.'
+        date_of_birth = data.get('date_of_birth' , '')
+        if not date_of_birth:
+            errors['date_of_birth'] = 'Date of Birth is required.'
+        elif date_of_birth:
+            date_of_birth= datetime.datetime.strptime(date_of_birth,'%Y-%m-%d').date()
+            today=datetime.date.today()
+            if date_of_birth > today:
+                errors['date_of_birth'] = 'Date of Birth cannot be in the future. Please enter a valid Date of Birth.'
+        return errors
+    
+    def create_user(self, data):
+        first_name = data.get('first_name' , '').strip()
+        last_name = data.get('last_name' , '').strip()
+        email = data.get('email' , '').strip()
+        date_of_birth = data.get('date_of_birth' , '')
+        password = data.get('password' , '')
+        password_hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+        user = User.objects.create(first_name=first_name , last_name=last_name , email=email , date_of_birth=date_of_birth , password=password_hashed)
+        return user
+    
+    def validate_login(self , data):
+        errors={}
+        email = data.get('email' , '').strip()
+        password = data.get('password' , '')
+
+        if not email or not password:
+            errors['user'] = 'Email and password are required.'
+            return errors
+        
+        user = User.objects.filter(email=email).first()
+        if not user:
+            errors['user'] = 'Invalid email or password.'
+            return errors
+        
+        user_password = user.password
+        if not bcrypt.checkpw(password.encode(), user_password.encode()):
+            errors['user'] = 'Invalid email or password.'
+
+        return errors
+    
+    def get_user(self, data):
+        email = data.get('email' , '').strip()
+        return User.objects.filter(email=email).first()
+
 
 class User(models.Model):
     first_name = models.CharField(max_length=45)
@@ -8,9 +86,10 @@ class User(models.Model):
     email = models.EmailField(unique=True)
     date_of_birth = models.DateField()
     password = models.CharField(max_length=255)
-    daily_study_hours = models.DecimalField(max_digits=4, decimal_places=2)
+    daily_study_hours = models.DecimalField(max_digits=4, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    objects = UserManager()
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
