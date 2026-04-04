@@ -7,6 +7,8 @@ from django.conf import settings
 from datetime import date, timedelta
 from django.contrib import messages
 
+def test_page(request):
+    return render(request, 'test.html')
 # Create your views here.
 def home(request):
     pass
