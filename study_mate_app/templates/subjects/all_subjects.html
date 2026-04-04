@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">My Subjects</h2>
+    <a href="/subjects/add/" class="btn btn-primary">+ Add Subject</a>
+</div>
+
+{% if user_subjects %}
+<div class="row">
+    {% for us in user_subjects %}
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">{{ us.subject.name }}</h5>
+                <p class="mb-1">📅 Exam Date: <strong>{{ us.exam_date }}</strong></p>
+                <p class="mb-3">
+                    Priority: 
+                    {% if us.priority == 'high' %}
+                        <span class="badge bg-danger">High</span>
+                    {% elif us.priority == 'medium' %}
+                        <span class="badge bg-warning text-dark">Medium</span>
+                    {% else %}
+                        <span class="badge bg-success">Low</span>
+                    {% endif %}
+                </p>
+                <div class="d-flex gap-2">
+                    <a href="/subjects/edit/{{ us.id }}/" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="/subjects/delete/{{ us.id }}/" class="btn btn-sm btn-danger">Delete</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center mt-5">
+    <h5 class="text-muted">No subjects yet. Add your first subject!</h5>
+    <a href="/subjects/add/" class="btn btn-primary mt-3">+ Add Subject</a>
+</div>
+{% endif %}
+
+{% endblock %}
