@@ -1,13 +1,59 @@
-from django.shortcuts import render, redirect,JsonResponse
+from django.shortcuts import render, redirect
+from django.http import JsonResponse
 from .models import Subject, UserSubject, User, StudyPlan, StudyPlanItem
 import anthropic
 import json
 from django.conf import settings
 from datetime import date, timedelta
+from django.contrib import messages
 
 # Create your views here.
 def home(request):
     pass
+
+def auth_page(request):
+    if request.session.get('user_id'):
+        return redirect('profile_dashboard')
+    
+    return render(request, 'auth.html')
+
+def register(request):
+    if request.method == 'POST':
+        errors = User.objects.validate_register(request.POST)
+
+        if errors:
+            for key, value in errors.items():
+                messages.error(request, value)
+            return redirect('auth')
+
+        user = User.objects.create_user(request.POST)
+
+        request.session['user_id'] = user.id
+        return redirect('profile_dashboard')
+
+    return redirect('auth')
+
+
+def login(request):
+    if request.method == 'POST':
+        errors = User.objects.validate_login(request.POST)
+
+        if errors:
+            for key, value in errors.items():
+                messages.error(request, value)
+            return redirect('auth')
+
+        user = User.objects.get(email=request.POST['email'])
+
+        request.session['user_id'] = user.id
+        return redirect('profile_dashboard')
+
+    return redirect('auth')
+
+def logout(request):
+    request.session.flush()
+    return redirect('auth')
+
 
 # ─── SUBJECTS ───
 
