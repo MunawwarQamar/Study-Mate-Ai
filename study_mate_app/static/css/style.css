@@ -64,6 +64,18 @@ body {
     min-height: 100vh;
 }
 
+.hero {
+    text-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    background: linear-gradient(145deg, rgb(49, 49, 250), white);
+    color: white;
+}
+
+.hover-zoom:hover {
+    transform: translateY(-10px) scale(1.08);
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
 /* Sidebar */
 .sidebar {
     width: 260px;
