@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 
+{% block page_title %}Study Plan AI{% endblock %}
+{% block page_subtitle %}Generate your personalized weekly study plan{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold">📅 My Study Plan</h2>
-</div>
 
 <!-- Generate Plan Form -->
 <div class="card shadow-sm mb-5">
@@ -38,7 +38,6 @@
     </div>
 </div>
 
-<!-- Display Generated Plan -->
 {% if latest_plan %}
 <h4 class="fw-bold mb-3">Your Current Plan
     <small class="text-muted fs-6">— Week of {{ latest_plan.week_start }}</small>
