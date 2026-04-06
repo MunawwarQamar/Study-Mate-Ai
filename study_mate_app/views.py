@@ -11,7 +11,7 @@ def test_page(request):
     return render(request, 'test.html')
 # Create your views here.
 def home(request):
-    pass
+    return render(request, 'home.html')
 
 def auth_page(request):
     if request.session.get('user_id'):
