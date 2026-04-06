@@ -1,5 +1,5 @@
+{% extends 'base_public.html' %}
 {% load static %}
-{% extends 'base.html' %}
 
 {% block content %}
 <div class="container py-5">
@@ -9,34 +9,46 @@
             <div class="card shadow">
                 <div class="card-body p-4">
 
-                    <h3 class="text-center mb-4">
+                    <h3 class="text-center mb-5">
                         {% if messages %}
-                            <span class="text-danger">Please fix the errors below</span>
+                        <span class="text-danger">Please fix the errors below</span>
                         {% else %}
-                            Welcome!
+                        Welcome!
                         {% endif %}
                     </h3>
 
                     {% if messages %}
-                        <div class="alert alert-danger">
-                            <ul class="mb-0">
-                                {% for message in messages %}
-                                    <li>{{ message }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            {% for message in messages %}
+                            <li>{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                     {% endif %}
 
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="mb-0" id="form-title">Login</h5>
+
+                        <div class="d-flex border rounded overflow-hidden">
+                            <button id="login-tab" class="btn active-tab px-3" onclick="showLogin()">
+                                Login
+                            </button>
+                            <button id="register-tab" class="btn inactive-tab px-3" onclick="showRegister()">
+                                Register
+                            </button>
+                        </div>
+                    </div>
                     <!-- Login Form -->
                     <div id="login-form">
-                        <h5 class="mb-3">Login</h5>
                         <form action="{% url 'login' %}" method="POST">
                             {% csrf_token %}
                             <div class="mb-3">
                                 <input type="email" name="email" class="form-control" placeholder="Email" required>
                             </div>
                             <div class="mb-3">
-                                <input type="password" name="password" class="form-control" placeholder="Password" required>
+                                <input type="password" name="password" class="form-control" placeholder="Password"
+                                    required>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Login</button>
                         </form>
@@ -44,30 +56,35 @@
                             Don't have an account?
                             <a href="#" onclick="showRegister(); return false;">Register</a>
                         </p>
+                        <div class="bg-light rounded mt-3" style="height: 150px;"></div>
                     </div>
 
                     <!-- Register Form -->
                     <div id="register-form" style="display:none;">
-                        <h5 class="mb-3">Register</h5>
                         <form action="{% url 'register' %}" method="POST">
                             {% csrf_token %}
                             <div class="mb-3">
-                                <input type="text" name="first_name" class="form-control" placeholder="First Name" required>
+                                <input type="text" name="first_name" class="form-control" placeholder="First Name"
+                                    required>
                             </div>
                             <div class="mb-3">
-                                <input type="text" name="last_name" class="form-control" placeholder="Last Name" required>
+                                <input type="text" name="last_name" class="form-control" placeholder="Last Name"
+                                    required>
                             </div>
                             <div class="mb-3">
                                 <input type="email" name="email" class="form-control" placeholder="Email" required>
                             </div>
                             <div class="mb-3">
-                                <input type="date" name="date_of_birth" class="form-control" placeholder="Date of Birth" required>
+                                <input type="date" name="date_of_birth" class="form-control" placeholder="Date of Birth"
+                                    required>
                             </div>
                             <div class="mb-3">
-                                <input type="password" name="password" class="form-control" placeholder="Password" required>
+                                <input type="password" name="password" class="form-control" placeholder="Password"
+                                    required>
                             </div>
                             <div class="mb-3">
-                                <input type="password" name="confirm_password" class="form-control" placeholder="Confirm Password" required>
+                                <input type="password" name="confirm_password" class="form-control"
+                                    placeholder="Confirm Password" required>
                             </div>
                             <button type="submit" class="btn btn-success w-100">Register</button>
                         </form>
