@@ -15,6 +15,42 @@ body {
     color: var(--text);
 }
 
+.auth-page {
+    overflow-y: scroll;
+}
+
+.top-feature{
+    background: linear-gradient(to top left, #feffff, #afddf4);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    border-radius: 24px;
+}
+
+.top-feature img{
+    border-radius: 24px;
+}
+
+.public-nav{
+    padding: 0px 200px;
+}
+.top-home{
+    max-height: 400px;
+}
+
+.feature-card{
+    /*background: linear-gradient(to top, #feffff, #afddf4);  not sure*/ 
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    padding: 20px;
+    /*border: 1px solid lightblue;  not sure*/
+    border-radius: 12px;
+    padding-bottom: 64px;
+    margin-bottom: 64px;
+}
+
+.feature-img{
+    max-width: 250px;
+    height: auto;
+}
+
 .app-shell {
     display: flex;
     min-height: 100vh;

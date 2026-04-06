@@ -1,5 +1,5 @@
+{% extends 'base_public.html' %}
 {% load static %}
-{% extends 'base.html' %}
 
 {% block content %}
 <div class="container py-5">
@@ -29,7 +29,7 @@
 
                     <!-- Login Form -->
                     <div id="login-form">
-                        <h5 class="mb-3">Login</h5>
+                        <h5 class="mb-5">Login</h5>
                         <form action="{% url 'login' %}" method="POST">
                             {% csrf_token %}
                             <div class="mb-3">
@@ -44,11 +44,12 @@
                             Don't have an account?
                             <a href="#" onclick="showRegister(); return false;">Register</a>
                         </p>
+                        <div class="bg-light rounded mt-3" style="height: 150px;"></div>
                     </div>
 
                     <!-- Register Form -->
                     <div id="register-form" style="display:none;">
-                        <h5 class="mb-3">Register</h5>
+                        <h5 class="mb-5">Register</h5>
                         <form action="{% url 'register' %}" method="POST">
                             {% csrf_token %}
                             <div class="mb-3">

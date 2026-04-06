@@ -1,0 +1,90 @@
+{% extends 'base_public.html' %}
+{% load static %}
+
+{% block title %}Home - StudyMate AI{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+
+    <div class="row align-items-center mb-5 py-5 top-feature">
+        <div class="col-md-6 text-center">
+            <h1 class="fw-bold py-4">StudyMate AI</h1>
+            <p class="text-muted">
+                Study smarter with AI-powered planning.
+            </p>
+            <p class="text-muted px-5">
+                Plan your study, stay consistent, and achieve your goals with a structured system and real-time progress
+                tracking.
+            </p>
+            <a href="/auth/" class="btn btn-primary mt-3">Get Started 🚀</a>
+        </div>
+        <div class="col-md-6 text-center">
+            <img src="{% static 'images/home.jpg' %}" alt="Home page AI studying" class="img-fluid top-home">
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <div class="p-5 shadow-sm rounded bg-light">
+                <h5>Our Mission</h5>
+                <p class="text-muted">Solving poor study organization for students everywhere</p>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="p-5 shadow-sm rounded bg-light">
+                <h5>Our Vision</h5>
+                <p class="text-muted">Making smart studying accessible to everyone</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row text-center">
+        <div class="col-md-3">
+            <div class="feature-card bg-light">
+                <img src="{% static 'images/Ai-study-plan.png' %}" alt="AI study plan photo"
+                    class="img-fluid feature-img">
+                <h6>AI Study Plans</h6>
+                <p class="text-muted">Personalized weekly study schedules</p>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="feature-card bg-light">
+                <img src="{% static 'images/progress.png' %}" alt="progress photo" class="img-fluid feature-img">
+                <h6>Progress Tracking</h6>
+                <p class="text-muted">Track your study hours & subjects</p>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="feature-card bg-light">
+                <img src="{% static 'images/study-rooms.png' %}" alt="virtual study rooms photo" class="img-fluid feature-img">
+                <h6>Study Rooms</h6>
+                <p class="text-muted">Join group study rooms</p>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="feature-card bg-light">
+                <img src="{% static 'images/gamification.png' %}" alt="gamification photo" class="img-fluid feature-img">
+                <h6>Gamification</h6>
+                <p class="text-muted">Earn XP, badges, and streaks</p>
+            </div>
+        </div>
+    </div>
+    <div class="row align-items-center mb-5 py-5 top-feature">
+        <div class="col-md-6 text-center">
+            <h2 class="fw-bold py-4">Why It Works 🎯</h2>
+            <p class="text-muted px-5">
+                Instead of guessing what to study, this app breaks your goals into daily tasks so you can stay consistent and avoid last-minute stress.
+            </p>
+        </div>
+        <div class="col-md-6 text-center">
+            <img src="{% static 'images/home2.jpg' %}" alt="Home page AI studying" class="img-fluid top-home">
+        </div>
+    </div>
+
+</section>
+{% endblock %}
