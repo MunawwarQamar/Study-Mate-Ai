@@ -19,6 +19,22 @@ body {
     overflow-y: scroll;
 }
 
+.active-tab {
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+}
+
+.inactive-tab {
+    background-color: #eeeff0;
+    color: #000;
+    border: none;
+}
+
+#login-form, #register-form {
+    transition: all 0.2s ease;
+}
+
 .top-feature{
     background: linear-gradient(to top left, #feffff, #afddf4);
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
