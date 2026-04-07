@@ -1,12 +1,13 @@
 {% extends 'base.html' %}
 
+{% block page_title %}Add Subject{% endblock %}
+{% block page_subtitle %}Add a new subject to your study plan{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card shadow-sm">
             <div class="card-body p-4">
-                <h3 class="fw-bold mb-4">Add New Subject</h3>
-
                 <form action="/subjects/add/" method="POST">
                     {% csrf_token %}
 

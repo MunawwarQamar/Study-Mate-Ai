@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 
+{% block page_title %}Study Plan AI{% endblock %}
+{% block page_subtitle %}Generate your personalized weekly study plan{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold">📅 My Study Plan</h2>
-</div>
 
 <!-- Generate Plan Form -->
 <div class="card shadow-sm mb-5">
@@ -14,16 +14,16 @@
 
             <div class="mb-3">
                 <label class="form-label fw-semibold">Available Study Hours Per Day</label>
-                <input type="number" name="available_hours" class="form-control" 
+                <input type="number" name="available_hours" class="form-control"
                     min="1" max="12" placeholder="e.g. 4" required>
             </div>
 
             <div class="mb-4">
                 <label class="form-label fw-semibold">Blocked Days (no studying)</label>
                 <div class="d-flex flex-wrap gap-3">
-                    {% for day in "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday".split(",") %}
+                    {% for day in "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday"|split:"," %}
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" 
+                        <input class="form-check-input" type="checkbox"
                             name="blocked_days" value="{{ day }}" id="{{ day }}">
                         <label class="form-check-label" for="{{ day }}">{{ day }}</label>
                     </div>
@@ -38,9 +38,8 @@
     </div>
 </div>
 
-<!-- Display Generated Plan -->
 {% if latest_plan %}
-<h4 class="fw-bold mb-3">Your Current Plan 
+<h4 class="fw-bold mb-3">Your Current Plan
     <small class="text-muted fs-6">— Week of {{ latest_plan.week_start }}</small>
 </h4>
 

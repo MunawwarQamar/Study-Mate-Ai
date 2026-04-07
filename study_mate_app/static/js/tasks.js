@@ -1,23 +1,8 @@
 function getCSRFToken() {
-    let cookieValue = null;
-
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-
-            if (cookie.substring(0, 10) === 'csrftoken=') {
-                cookieValue = decodeURIComponent(cookie.substring(10));
-                break;
-            }
-        }
-    }
-
-    return cookieValue;
+    const match = document.cookie.match(/csrftoken=([\w-]+)/);
+    return match ? match[1] : '';
 }
 
-// Toggle function
 function toggleTask(taskId) {
     fetch(`/tasks/toggle/${taskId}/`, {
         method: 'POST',
@@ -28,31 +13,36 @@ function toggleTask(taskId) {
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error("Network error");
+            throw new Error('Request failed');
         }
         return response.json();
     })
     .then(data => {
         const statusCell = document.getElementById(`status-${taskId}`);
 
-        if (!statusCell) return;
+        if (!statusCell) {
+            console.error(`Element status-${taskId} not found`);
+            return;
+        }
 
-        statusCell.innerHTML =
-            data.status === 'completed'
-                ? '<span class="badge bg-success">Completed</span>'
-                : '<span class="badge bg-warning text-dark">Pending</span>';
+        if (data.status === 'completed') {
+            statusCell.innerHTML = '<span class="badge bg-success">Completed</span>';
+        } else {
+            statusCell.innerHTML = '<span class="badge bg-warning text-dark">Pending</span>';
+        }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+    });
 }
 
-// Event delegation
-document.addEventListener("DOMContentLoaded", function () {
-    document.addEventListener("click", function (e) {
-        const btn = e.target.closest(".toggle-btn");
+document.addEventListener('DOMContentLoaded', () => {
+    const buttons = document.querySelectorAll('.toggle-btn');
 
-        if (!btn) return;
-
-        const taskId = btn.dataset.id;
-        toggleTask(taskId);
+    buttons.forEach(button => {
+        button.addEventListener('click', function () {
+            const taskId = this.dataset.id;
+            toggleTask(taskId);
+        });
     });
 });
