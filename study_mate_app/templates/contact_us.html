@@ -1,0 +1,31 @@
+{% extends "base_public.html" %}
+{% block title %}Contact - StudyMate AI{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+    <div class="row g-0 shadow-sm rounded overflow-hidden">
+        <div class="col-md-6 d-none d-md-block contact-bg"></div>
+
+        <div class="col-md-6 p-4 p-md-5 bg-light">
+            <h2 class="fw-bold mb-3">Get in Touch</h2>
+            <p class="text-muted mb-4">
+                Helping students study planning at its best with progress tracking.
+            </p>
+
+            <div class="p-4 shadow-sm rounded bg-white">
+                <h5 class="fw-bold mb-3">Contact Us Form</h5>
+                <p class="text-muted mb-4">Your learning matters... let us know how we can help!</p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="text" class="form-control mb-3" placeholder="Name" required>
+                    <input type="email" class="form-control mb-3" placeholder="Email" required>
+                    <textarea class="form-control mb-3" rows="4" placeholder="Message" required></textarea>
+                    <button class="btn btn-primary w-100">Submit</button>
+                </form>
+            </div>
+        </div>
+        <div class="col-12 d-block d-md-none contact-bg-mobile order-2"></div>
+    </div>
+</section>
+{% endblock %}

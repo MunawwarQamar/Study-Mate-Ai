@@ -56,6 +56,9 @@ def logout(request):
     request.session.flush()
     return redirect('auth')
 
+def contact_us(request):
+    return render(request, 'contact_us.html')
+
 
 # ─── SUBJECTS ───
 

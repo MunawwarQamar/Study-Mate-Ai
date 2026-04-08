@@ -45,9 +45,36 @@ body {
     border-radius: 24px;
 }
 
-.public-nav{
-    padding: 0px 200px;
+
+.public-nav a {
+    text-decoration: none;
 }
+
+.public-nav .nav-link {
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.nav-item:hover {
+    background-color: lightblue;
+    border: 1px solid lightblue;
+    border-radius: 8px;
+}
+
+.navbar-nav {
+    gap: 6px;
+}
+
+.navbar-nav .nav-link {
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+
+.navbar-nav .btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+
 .top-home{
     max-height: 400px;
 }
@@ -90,6 +117,28 @@ body {
     transform: translateY(-10px) scale(1.08);
     transition: all 0.3s ease;
     box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.contact-bg{
+    background-image: url('/static/images/contact-us2.jpg');
+    background-size: cover;
+    background-position: center;
+    min-height: 100%;
+    min-height: 400px;
+}
+
+.contact-bg-mobile {
+    background-image: url('/static/images/contact-us2.jpg'); 
+    background-size: cover;
+    background-position: center;
+    height: 300px; 
+    margin-top: 16px;
+}
+
+form input,
+form textarea {
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* Sidebar */
@@ -251,5 +300,15 @@ body {
 
     .main-wrapper {
         margin-left: 0;
+    }
+}
+
+@media (max-width: 991px) {
+    .navbar-collapse {
+        text-align: right;
+    }
+
+    .navbar-nav {
+        align-items: flex-end;
     }
 }
