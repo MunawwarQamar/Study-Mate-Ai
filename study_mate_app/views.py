@@ -1,11 +1,11 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from .models import Subject, UserSubject, User, StudyPlan, StudyPlanItem
-import anthropic
+from openai import OpenAI
 import json
-from django.conf import settings
 from datetime import date, timedelta
 from django.contrib import messages
+
 
 def test_page(request):
     return render(request, 'test.html')
@@ -15,7 +15,7 @@ def home(request):
 
 def auth_page(request):
     if request.session.get('user_id'):
-        return redirect('profile_dashboard')
+        return redirect('study_plan')
     
     return render(request, 'auth.html')
 
@@ -31,7 +31,7 @@ def register(request):
         user = User.objects.create_user(request.POST)
 
         request.session['user_id'] = user.id
-        return redirect('profile_dashboard')
+        return redirect('study_plan')
 
     return redirect('auth')
 
@@ -48,7 +48,7 @@ def login(request):
         user = User.objects.get(email=request.POST['email'])
 
         request.session['user_id'] = user.id
-        return redirect('profile_dashboard')
+        return redirect('study_plan')
 
     return redirect('auth')
 
@@ -114,10 +114,11 @@ def delete_subject(request, id):
 def study_plan(request):
     user = User.objects.get(id=request.session['user_id'])
     user_subjects = UserSubject.objects.filter(user=user).select_related('subject')
-    latest_plan = StudyPlan.objects.filter(user=user).prefetch_related('plan_items_user_subject_subject').last()
+    latest_plan = StudyPlan.objects.filter(user=user).last()
     return render(request, 'study_plan/study_plan.html', {
         'user_subjects': user_subjects,
-        'latest_plan': latest_plan
+        'latest_plan': latest_plan,
+        'days':['Monday', 'Tuesday', 'Wednesday', 'Thursday' , 'Friday', 'Saturday', 'Sunday']
     })
 
 def generate_plan(request):
@@ -127,54 +128,29 @@ def generate_plan(request):
         blocked_days = request.POST.getlist('blocked_days')
         user_subjects = UserSubject.objects.filter(user=user).select_related('subject')
 
-        # Build subjects info for the AI
-        subjects_info = []
-        for us in user_subjects:
-            subjects_info.append(
-                f"- {us.subject.name} (Exam: {us.exam_date}, Priority: {us.priority})"
-            )
-        subjects_text = "\n".join(subjects_info)
-        blocked_text = ", ".join(blocked_days) if blocked_days else "None"
-        today = date.today()
+        # Mock AI plan
+        plan_data = []
+        current_date = date.today()
+        subjects_list = list(user_subjects)
+        days_added = 0
 
-        prompt = f"""
-You are a smart study planner. Generate a 7-day study plan starting from {today}.
-
-Student's subjects:
-{subjects_text}
-
-Available study hours per day: {available_hours} hours
-Blocked days (no studying): {blocked_text}
-
-Return ONLY a JSON array, no extra text, like this:
-[
-  {{"date": "YYYY-MM-DD", "subject": "Subject Name", "hours": 2}},
-  {{"date": "YYYY-MM-DD", "subject": "Subject Name", "hours": 1.5}}
-]
-
-Rules:
-- Skip blocked days completely
-- Prioritize high priority subjects
-- Split hours across subjects on the same day if needed
-- Don't exceed available hours per day
-- Focus on subjects with closer exam dates
-"""
-
-        client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
-        message = client.messages.create(
-            model="claude-opus-4-6",
-            max_tokens=1024,
-            messages=[{"role": "user", "content": prompt}]
-        )
-
-        response_text = message.content[0].text.strip()
-        plan_data = json.loads(response_text)
+        while days_added < 7:
+            day_name = current_date.strftime('%A')
+            if day_name not in blocked_days:
+                for us in subjects_list:
+                    plan_data.append({
+                        "date": str(current_date),
+                        "subject": us.subject.name,
+                        "hours": round(float(available_hours) / len(subjects_list), 1)
+                    })
+                days_added += 1
+            current_date += timedelta(days=1)
 
         # Save the plan
         study_plan = StudyPlan.objects.create(
             user=user,
-            week_start=today,
-            generated_by_ai=response_text
+            week_start=date.today(),
+            generated_by_ai="mock"
         )
 
         # Save each item
@@ -193,6 +169,75 @@ Rules:
         return redirect('study_plan')
     return redirect('study_plan')
 
+#Todo:replace with real Ai when credits are avaliable
+
+# def generate_plan(request):
+#     if request.method == 'POST':
+#         user = User.objects.get(id=request.session['user_id'])
+#         available_hours = request.POST['available_hours']
+#         blocked_days = request.POST.getlist('blocked_days')
+#         user_subjects = UserSubject.objects.filter(user=user).select_related('subject')
+
+#         # Build subjects info for the AI
+#         subjects_info = []
+#         for us in user_subjects:
+#             subjects_info.append(
+#                 f"- {us.subject.name} (Exam: {us.exam_date}, Priority: {us.priority})"
+#             )
+#         subjects_text = "\n".join(subjects_info)
+#         blocked_text = ", ".join(blocked_days) if blocked_days else "None"
+#         today = date.today()
+
+#         prompt = f"""
+# You are a smart study planner. Generate a 7-day study plan starting from {today}.
+
+# Student's subjects:
+# {subjects_text}
+
+# Available study hours per day: {available_hours} hours
+# Blocked days (no studying): {blocked_text}
+
+# Return ONLY a JSON array, no extra text, like this:
+# [
+#   {{"date": "YYYY-MM-DD", "subject": "Subject Name", "hours": 2}},
+#   {{"date": "YYYY-MM-DD", "subject": "Subject Name", "hours": 1.5}}
+# ]
+
+# Rules:
+# - Skip blocked days completely
+# - Prioritize high priority subjects
+# - Split hours across subjects on the same day if needed
+# - Don't exceed available hours per day
+# - Focus on subjects with closer exam dates
+# """
+
+#         client = OpenAI(
+#             api_key="",
+#             base_url=""
+#         )
+#         response = client.chat.completions.create(
+#              model="grok-4-latest",
+#              messages=[{"role": "user", "content": prompt}]
+#         )
+#         response_text = response.choices[0].message.content.strip()
+#         plan_data = json.loads(response_text)
+
+#         # Save each item
+#         for item in plan_data:
+#             subject_name = item['subject']
+#             us = user_subjects.filter(subject__name=subject_name).first()
+#             if us:
+#                 StudyPlanItem.objects.create(
+#                     study_plan=study_plan,
+#                     user_subject=us,
+#                     study_date=item['date'],
+#                     planned_hours=item['hours'],
+#                     status='pending'
+#                 )
+
+#         return redirect('study_plan')
+#     return redirect('study_plan')
+
 
 # ─── TASKS ───
 
@@ -207,9 +252,9 @@ def all_tasks(request):
     status_filter = request.GET.get('status')
 
     if subject_filter:
-        tasks = tasks.filter(user_subject_subject_id=subject_filter)
+        tasks = tasks.filter(user_subject_id = subject_filter)
     if status_filter:
-        tasks = tasks.filter(status=status_filter)
+        tasks = tasks.filter(status = status_filter)
 
     return render(request, 'tasks/all_tasks.html', {
         'tasks': tasks,

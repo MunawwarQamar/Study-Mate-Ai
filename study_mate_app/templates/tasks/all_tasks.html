@@ -15,8 +15,7 @@
                 <select name="subject" class="form-select">
                     <option value="">All Subjects</option>
                     {% for us in user_subjects %}
-                    <option value="{{ us.subject.id }}" {% if subject_filter==us.subject.id|stringformat:"s"
-                        %}selected{% endif %}>
+                    <option value="{{ us.id }}" {% if subject_filter == us.id|stringformat:"s" %}selected{% endif %}>
                         {{ us.subject.name }}
                     </option>
                     {% endfor %}
@@ -26,8 +25,8 @@
                 <label class="form-label fw-semibold">Filter by Status</label>
                 <select name="status" class="form-select">
                     <option value="">All</option>
-                    <option value="pending" {% if status_filter=='pending' %}selected{% endif %}>Pending</option>
-                    <option value="completed" {% if status_filter=='completed' %}selected{% endif %}>Completed</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -66,9 +65,8 @@
                     {% endif %}
                 </td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary toggle-btn" data-id="{{ task.id }}">
-                        Toggle
-                    </button>
+                     <button class="btn btn-sm btn-outline-primary toggle-btn" data-id="{{ task.id }}">
+                     Mark Done</button>
                 </td>
             </tr>
             {% endfor %}
