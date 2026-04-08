@@ -15,7 +15,7 @@ def home(request):
 
 def auth_page(request):
     if request.session.get('user_id'):
-        return redirect('study_plan')
+        return redirect('profile_dashboard')
     
     return render(request, 'auth.html')
 
@@ -31,7 +31,7 @@ def register(request):
         user = User.objects.create_user(request.POST)
 
         request.session['user_id'] = user.id
-        return redirect('study_plan')
+        return redirect('profile_dashboard')
 
     return redirect('auth')
 
@@ -48,7 +48,7 @@ def login(request):
         user = User.objects.get(email=request.POST['email'])
 
         request.session['user_id'] = user.id
-        return redirect('study_plan')
+        return redirect('profile_dashboard')
 
     return redirect('auth')
 
