@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard | StudyMate AI{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Welcome back, {{ user.first_name }}! Let’s continue learning.{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="dashboard-card progress-card">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                    <div>
+                        <p class="section-label mb-2">Progress Overview</p>
+                        <h3 class="section-title mb-1">{{ weekly_progress_percent }}% completed this week</h3>
+                        <p class="section-subtitle mb-0">
+                            You completed {{ completed_tasks_count }} out of {{ weekly_tasks_count }} tasks this week.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="progress custom-progress mt-4" role="progressbar" aria-valuenow="{{ weekly_progress_percent }}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar" style="width: {{ weekly_progress_percent }}%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="dashboard-card stat-card">
+                <p class="stat-label">Tasks Today</p>
+                <h2 class="stat-value">{{ tasks_today_count }}</h2>
+                <p class="stat-note mb-0">Planned for today</p>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="dashboard-card stat-card">
+                <p class="stat-label">Study Hours</p>
+                <h2 class="stat-value">{{ study_hours_this_week }}</h2>
+                <p class="stat-note mb-0">This week</p>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="dashboard-card stat-card">
+                <p class="stat-label">Subjects</p>
+                <h2 class="stat-value">{{ active_subjects_count }}</h2>
+                <p class="stat-note mb-0">Active subjects</p>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-6">
+            <div class="dashboard-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <p class="section-label mb-1">Today’s Tasks</p>
+                        <h4 class="card-heading mb-0">Stay on track today</h4>
+                    </div>
+                    <a href="#" class="small-link">View all</a>
+                </div>
+
+                {% if todays_tasks %}
+                    <div class="task-list">
+                        {% for task in todays_tasks %}
+                            <div class="task-item">
+                                <div class="task-item-left">
+                                    <input class="form-check-input mt-0" type="checkbox" {% if task.status == 'completed' %}checked{% endif %} disabled>
+                                    <div>
+                                        <p class="task-title mb-1">{{ task.user_subject.subject.name }}</p>
+                                        <div class="task-meta">
+                                            <span>{{ task.planned_hours }} hrs</span>
+                                            <span class="dot"></span>
+                                            <span>{{ task.status|title }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="task-badge">{{ task.user_subject.priority|title }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <p class="empty-title mb-1">No tasks for today</p>
+                        <p class="empty-text mb-0">You are all caught up. Generate a new plan or review your upcoming exams.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-6">
+            <div class="dashboard-card h-100">
+                <p class="section-label mb-1">Continue Studying</p>
+                <h4 class="card-heading mb-3">Pick up where you left off</h4>
+
+                {% if continue_subject %}
+                    <div class="continue-box">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                            <div>
+                                <h5 class="continue-subject mb-1">{{ continue_subject.subject.name }}</h5>
+                                <p class="continue-text mb-0">Last studied recently</p>
+                            </div>
+                            <a href="#" class="btn btn-primary btn-sm custom-btn">Continue</a>
+                        </div>
+
+                        <p class="mini-label mb-2">Priority</p>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="task-badge">{{ continue_subject.priority|title }}</span>
+                            <span class="continue-text">Exam: {{ continue_subject.exam_date }}</span>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <p class="empty-title mb-1">No recent study session</p>
+                        <p class="empty-text mb-0">Start studying one of your subjects and it will appear here.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-6">
+            <div class="dashboard-card h-100">
+                <p class="section-label mb-1">Upcoming Exams</p>
+                <h4 class="card-heading mb-3">Your nearest deadlines</h4>
+
+                {% if upcoming_exams %}
+                    <div class="exam-list">
+                        {% for item in upcoming_exams %}
+                            <div class="exam-item">
+                                <div>
+                                    <p class="exam-subject mb-1">{{ item.subject.name }}</p>
+                                    <p class="exam-date mb-0">{{ item.exam_date }}</p>
+                                </div>
+                                <span class="task-badge">{{ item.priority|title }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <p class="empty-title mb-1">No upcoming exams</p>
+                        <p class="empty-text mb-0">Add subjects and exam dates to start planning better.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-6">
+            <div class="dashboard-card h-100 ai-card">
+                <p class="section-label mb-1">AI Suggestion</p>
+                <h4 class="card-heading mb-3">Smart recommendation for you</h4>
+
+                <div class="ai-suggestion-box">
+                    <div class="ai-icon">
+                        <i class="bi bi-stars"></i>
+                    </div>
+                    <p class="ai-text mb-0">{{ ai_suggestion }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

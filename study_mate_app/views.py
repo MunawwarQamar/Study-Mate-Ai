@@ -1,14 +1,88 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
-from .models import Subject, UserSubject, User, StudyPlan, StudyPlanItem
 import anthropic
 import json
 from django.conf import settings
 from datetime import date, timedelta
 from django.contrib import messages
+from django.db.models import Sum, Count, Q
+from django.utils import timezone
+from datetime import timedelta
+from .models import Subject, UserSubject, User, StudyPlan, StudyPlanItem, StudySession
 
-def test_page(request):
-    return render(request, 'test.html')
+
+def dashboard(request):
+    context = {
+        'user': {
+            'first_name': 'Munawwar',
+        },
+        'tasks_today_count': 4,
+        'study_hours_this_week': 12.5,
+        'active_subjects_count': 5,
+        'weekly_progress_percent': 68,
+        'completed_tasks_count': 11,
+        'weekly_tasks_count': 16,
+        'todays_tasks': [
+            {
+                'user_subject': {
+                    'subject': {'name': 'Frontend Development'},
+                    'priority': 'high',
+                },
+                'planned_hours': 2,
+                'status': 'completed',
+            },
+            {
+                'user_subject': {
+                    'subject': {'name': 'Database Systems'},
+                    'priority': 'medium',
+                },
+                'planned_hours': 1.5,
+                'status': 'pending',
+            },
+            {
+                'user_subject': {
+                    'subject': {'name': 'UI/UX Design'},
+                    'priority': 'high',
+                },
+                'planned_hours': 1,
+                'status': 'pending',
+            },
+            {
+                'user_subject': {
+                    'subject': {'name': 'Python Practice'},
+                    'priority': 'low',
+                },
+                'planned_hours': 1,
+                'status': 'completed',
+            },
+        ],
+        'upcoming_exams': [
+            {
+                'subject': {'name': 'Web Development'},
+                'exam_date': '2026-04-15',
+                'priority': 'high',
+            },
+            {
+                'subject': {'name': 'Database'},
+                'exam_date': '2026-04-18',
+                'priority': 'medium',
+            },
+            {
+                'subject': {'name': 'Algorithms'},
+                'exam_date': '2026-04-22',
+                'priority': 'low',
+            },
+        ],
+        'continue_subject': {
+            'subject': {'name': 'Frontend Development'},
+            'priority': 'high',
+            'exam_date': '2026-04-15',
+        },
+        'ai_suggestion': "You are doing well this week. Focus more on Database today because its exam is getting closer.",
+    }
+    return render(request, 'dashboard.html', context)
+
+
 # Create your views here.
 def home(request):
     return render(request, 'home.html')
