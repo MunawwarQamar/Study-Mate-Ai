@@ -2,6 +2,7 @@ from django.db import models
 import re
 import datetime
 import bcrypt
+from datetime import date, timedelta
 
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+$')
 
@@ -55,6 +56,62 @@ class UserManager(models.Manager):
         user = User.objects.create(first_name=first_name , last_name=last_name , email=email , date_of_birth=date_of_birth , password=password_hashed)
         return user
     
+    def update_profile(self, user, data, files):
+        user.first_name = data.get('first_name', user.first_name)
+        user.last_name = data.get('last_name', user.last_name)
+        user.email = data.get('email', user.email)
+
+        uploaded_image = files.get('profile_image')
+        avatar_choice = data.get('avatar_choice')
+
+        if uploaded_image:
+            user.profile_image = uploaded_image
+        elif avatar_choice:
+            user.profile_image = f'avatars/{avatar_choice}'
+
+        password = data.get('password')
+        if password:
+            user.password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+        user.save()
+        return user
+
+    def add_xp_and_streak(self, user, xp=5):
+        user.xp_points += xp
+        today = date.today()
+
+        if user.last_study_date == today - timedelta(days=1):
+            user.current_streak += 1
+        elif user.last_study_date != today:
+            user.current_streak = 1
+
+        user.last_study_date = today
+        user.save()
+
+    def get_xp_progress(self, user):
+        level = user.xp_points // 100
+        current_xp = user.xp_points % 100
+
+        return {
+            'level': level,
+            'current_xp': current_xp,
+            'next_level_xp': 100,
+            'progress_percent': int((current_xp / 100) * 100)
+        }
+
+    def get_next_badge(self, user):
+        badges = [
+            {'name': 'Beginner', 'xp': 50},
+            {'name': 'Focused', 'xp': 100},
+            {'name': 'Master', 'xp': 150},
+            {'name': 'Legend', 'xp': 200},
+        ]
+
+        for badge in badges:
+            if user.xp_points < badge['xp']:
+                return badge
+        return None
+    
     def validate_login(self , data):
         errors={}
         email = data.get('email' , '').strip()
@@ -87,6 +144,12 @@ class User(models.Model):
     date_of_birth = models.DateField()
     password = models.CharField(max_length=255)
     daily_study_hours = models.DecimalField(max_digits=4, decimal_places=2, default=0)
+
+    profile_image = models.ImageField(upload_to='profile_images/', default='profile_images/default_avatar.jpg', blank=True, null=True)
+    xp_points = models.IntegerField(default=0)
+    current_streak = models.IntegerField(default=0)
+    last_study_date = models.DateField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     objects = UserManager()
