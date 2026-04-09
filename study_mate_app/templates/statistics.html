@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Statistics | StudyMate AI{% endblock %}
+{% block page_title %}Statistics{% endblock %}
+{% block page_subtitle %}Track your study performance in a clear and simple way.{% endblock %}
+
+{% block content %}
+<div class="statistics-clean-page">
+    <div class="stats-header-row">
+        <div class="stats-tabs">
+            <button class="stats-tab active" type="button">Overview</button>
+            <button class="stats-tab" type="button">Tasks</button>
+            <button class="stats-tab" type="button">Focus</button>
+        </div>
+    </div>
+
+    <div class="dashboard-card stats-overview-card">
+        <div class="stats-overview-grid">
+            <div class="overview-metric">
+                <p class="overview-label">Completed Tasks</p>
+                <h2 class="overview-value">{{ completed_tasks }}</h2>
+                <p class="overview-note">This period</p>
+            </div>
+
+            <div class="overview-divider"></div>
+
+            <div class="overview-metric">
+                <p class="overview-label">Study Hours</p>
+                <h2 class="overview-value">{{ total_study_hours }}</h2>
+                <p class="overview-note">Tracked hours</p>
+            </div>
+
+            <div class="overview-divider"></div>
+
+            <div class="overview-metric">
+                <p class="overview-label">Focus Time</p>
+                <h2 class="overview-value">18.4</h2>
+                <p class="overview-note">Hours focused</p>
+            </div>
+
+            <div class="overview-divider"></div>
+
+            <div class="overview-metric">
+                <p class="overview-label">Current Streak</p>
+                <h2 class="overview-value">{{ current_streak }}</h2>
+                <p class="overview-note">Days in a row</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-12 col-xl-8">
+            <div class="dashboard-card chart-clean-card h-100">
+                <div class="chart-card-head">
+                    <div>
+                        <p class="section-label mb-1">Overview</p>
+                        <h4 class="card-heading mb-0">Study activity</h4>
+                    </div>
+
+                    <select class="form-select clean-select">
+                        <option>Weekly</option>
+                        <option>Monthly</option>
+                        <option>Yearly</option>
+                    </select>
+                </div>
+
+                <div class="chart-clean-wrap">
+                    <canvas id="studyActivityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <div class="dashboard-card chart-clean-card h-100">
+                <div class="chart-card-head">
+                    <div>
+                        <p class="section-label mb-1">Distribution</p>
+                        <h4 class="card-heading mb-0">By subject</h4>
+                    </div>
+                </div>
+
+                <div class="chart-clean-wrap small-donut-wrap">
+                    <canvas id="subjectSplitChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="dashboard-card recent-record-card">
+                <div class="chart-card-head">
+                    <div>
+                        <p class="section-label mb-1">Recent Record</p>
+                        <h4 class="card-heading mb-0">Latest study sessions</h4>
+                    </div>
+
+                    <select class="form-select clean-select">
+                        <option>Today</option>
+                        <option>This Week</option>
+                        <option>This Month</option>
+                    </select>
+                </div>
+
+                <div class="record-list">
+                    <div class="record-item">
+                        <div class="record-left">
+                            <div class="record-dot"></div>
+                            <div>
+                                <p class="record-subject mb-1">Frontend Development</p>
+                                <p class="record-time mb-0">09:00 AM - 10:30 AM</p>
+                            </div>
+                        </div>
+                        <span class="record-duration">1.5h</span>
+                    </div>
+
+                    <div class="record-item">
+                        <div class="record-left">
+                            <div class="record-dot"></div>
+                            <div>
+                                <p class="record-subject mb-1">Database Systems</p>
+                                <p class="record-time mb-0">11:00 AM - 12:00 PM</p>
+                            </div>
+                        </div>
+                        <span class="record-duration">1h</span>
+                    </div>
+
+                    <div class="record-item">
+                        <div class="record-left">
+                            <div class="record-dot"></div>
+                            <div>
+                                <p class="record-subject mb-1">UI/UX Design</p>
+                                <p class="record-time mb-0">02:00 PM - 03:15 PM</p>
+                            </div>
+                        </div>
+                        <span class="record-duration">1.25h</span>
+                    </div>
+
+                    <div class="record-item">
+                        <div class="record-left">
+                            <div class="record-dot"></div>
+                            <div>
+                                <p class="record-subject mb-1">Python Practice</p>
+                                <p class="record-time mb-0">05:00 PM - 06:00 PM</p>
+                            </div>
+                        </div>
+                        <span class="record-duration">1h</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const activityCtx = document.getElementById('studyActivityChart');
+    if (activityCtx) {
+        new Chart(activityCtx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Study Hours',
+                    data: [2, 3.5, 2.5, 4, 3, 4.5, 3.5],
+                    borderColor: '#4F46E5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.12)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#4F46E5',
+                    pointBorderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#64748B' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#64748B' },
+                        grid: { color: '#EAEFF6' }
+                    }
+                }
+            }
+        });
+    }
+
+    const splitCtx = document.getElementById('subjectSplitChart');
+    if (splitCtx) {
+        new Chart(splitCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Frontend', 'Database', 'UI/UX', 'Python'],
+                datasets: [{
+                    data: [14, 10, 8, 10.5],
+                    backgroundColor: ['#4F46E5', '#7C74FF', '#A5B4FC', '#C7D2FE'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '72%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#64748B',
+                            boxWidth: 12,
+                            padding: 14
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const statsTabs = document.querySelectorAll('.stats-tab');
+    statsTabs.forEach(tab => {
+        tab.addEventListener('click', function () {
+            statsTabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+</script>
+{% endblock %}

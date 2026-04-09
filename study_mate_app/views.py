@@ -7,6 +7,33 @@ from datetime import date, timedelta
 from django.contrib import messages
 
 
+def statistics(request):
+    context = {
+        'user': {
+            'first_name': 'Munawwar',
+        },
+        'completed_tasks': 24,
+        'total_study_hours': 42.5,
+        'avg_daily_hours': 3.6,
+        'current_streak': 7,
+
+        'subject_stats': [
+            {'name': 'Frontend Development', 'hours': 14, 'progress': 82},
+            {'name': 'Database Systems', 'hours': 10, 'progress': 68},
+            {'name': 'UI/UX Design', 'hours': 8, 'progress': 74},
+            {'name': 'Python Practice', 'hours': 10.5, 'progress': 61},
+        ],
+
+        'leaderboard': [
+            {'name': 'Munawwar', 'hours': 12.5},
+            {'name': 'Rafeef', 'hours': 11},
+            {'name': 'Basel', 'hours': 9.5},
+            {'name': 'Majd', 'hours': 8},
+        ],
+    }
+    return render(request, 'statistics.html', context)
+
+
 def test_page(request):
     return render(request, 'test.html')
 # Create your views here.
