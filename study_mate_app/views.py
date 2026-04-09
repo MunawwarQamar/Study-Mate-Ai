@@ -302,3 +302,6 @@ def toggle_task(request, id):
             task.status = 'pending'
         task.save()
         return JsonResponse({'status': task.status})
+
+def profile_page(request):
+    pass
