@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
-from .models import Subject, UserSubject, User, StudyPlan, StudyPlanItem
+from .models import Subject, UserSubject, User, StudyPlan, StudyPlanItem, StudySession
 from openai import OpenAI
 import json
 from datetime import date, timedelta
@@ -277,4 +277,27 @@ def toggle_task(request, id):
         return JsonResponse({'status': task.status})
 
 def profile_page(request):
-    pass
+    if not request.session.get('user_id'):
+        return redirect('auth')
+    
+    user = User.objects.get(id=request.session['user_id'])
+
+    sessions = StudySession.objects.filter(user_subject__user=user)
+    total_minutes = 0
+    for s in sessions:
+        total_minutes += s.duration_minutes
+    total_hours = round(total_minutes / 60, 2)
+
+    xp_data = User.objects.get_xp_progress(user)
+    next_badge = User.objects.get_next_badge(user)
+    weekly_data = StudySession.objects.weekly_data(user)
+
+    context = {
+        'user': user,
+        'total_hours': total_hours,
+        'xp_data': xp_data,
+        'next_badge': next_badge,
+        'weekly_data': weekly_data
+    }
+
+    return render(request, 'profile_page.html' , context=context)
