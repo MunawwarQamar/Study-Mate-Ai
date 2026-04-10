@@ -9,6 +9,11 @@
     --accent: #F59E0B;
 }
 
+*{
+    padding: 0px;
+    margin: 0px;
+}
+
 body {
     background-color: var(--bg);
     font-family: 'Segoe UI', sans-serif;

@@ -136,6 +136,34 @@ class UserManager(models.Manager):
         email = data.get('email' , '').strip()
         return User.objects.filter(email=email).first()
 
+class StudySessionManager(models.Manager):
+    def log_session(self, user_subject, duration_minutes, notes, session_date):
+        session = self.create(user_subject=user_subject, duration_minutes=duration_minutes, notes=notes , session_date=session_date)
+        user = user_subject.user
+        User.objects.add_xp_and_streak(user)
+
+        return session
+    
+    def weekly_data(self, user):
+        today = date.today()
+        start = today - timedelta(days=6)
+
+        # Get sessions for this user in last 7 days
+        sessions = self.filter(
+            user_subject__user=user,
+            date__range=[start, today]
+        )
+
+        result = {}
+        for i in range(7):
+            day = start + timedelta(days=i)
+            result[str(day)] = 0
+
+        for session in sessions:
+            day=str(session.date)
+            result[day] += session.duration_minutes / 60
+        
+        return result
 
 class User(models.Model):
     first_name = models.CharField(max_length=45)
@@ -227,6 +255,8 @@ class StudySession(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = StudySessionManager()
 
     def __str__(self):
         return f'{self.date}'
