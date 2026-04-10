@@ -40,39 +40,20 @@
 </div>
 
 {% if tasks %}
-<div class="table-responsive">
-    <table class="table table-bordered table-hover align-middle">
-        <thead class="table-primary">
-            <tr>
-                <th>📅 Date</th>
-                <th>📚 Subject</th>
-                <th>⏱ Planned Hours</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for task in tasks %}
-            <tr id="task-row-{{ task.id }}">
-                <td>{{ task.study_date }}</td>
-                <td>{{ task.user_subject.subject.name }}</td>
-                <td>{{ task.planned_hours }} hrs</td>
-                <td id="status-{{ task.id }}">
-                    {% if task.status == 'completed' %}
-                    <span class="badge bg-success">Completed</span>
-                    {% else %}
-                    <span class="badge bg-warning text-dark">Pending</span>
-                    {% endif %}
-                </td>
-                <td>
-                     <button class="btn btn-sm btn-outline-primary toggle-btn" data-id="{{ task.id }}">
-                     Mark Done</button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<div id="calendar"></div>
+
+<<script>
+const events = [
+    {% for task in tasks %}
+    {
+        id: "{{ task.id|escapejs }}",
+        title: "{{ task.user_subject.subject.name|escapejs }} - {{ task.planned_hours }}h",
+        start: "{{ task.study_date|escapejs }}",
+        color: "{% if task.status == 'completed' %}green{% else %}orange{% endif %}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+</script>
 
 {% else %}
 <div class="text-center mt-5">
@@ -80,6 +61,9 @@
     <a href="/study-plan/" class="btn btn-primary mt-3">Go to Study Plan</a>
 </div>
 {% endif %}
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
 <script src="{% static 'js/tasks.js' %}"></script>
 {% endblock %}
