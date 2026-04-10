@@ -1,48 +1,43 @@
 function getCSRFToken() {
-    const match = document.cookie.match(/csrftoken=([\w-]+)/);
+    const match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
     return match ? match[1] : '';
 }
 
-function toggleTask(taskId) {
+function toggleTask(taskId, eventObj) {
     fetch(`/tasks/toggle/${taskId}/`, {
         method: 'POST',
         headers: {
             'X-CSRFToken': getCSRFToken(),
             'Content-Type': 'application/json'
-        }
+        },
+        credentials: 'same-origin'
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Request failed');
-        }
-        return response.json();
-    })
+    .then(res => res.json())
     .then(data => {
-        const statusCell = document.getElementById(`status-${taskId}`);
-
-        if (!statusCell) {
-            console.error(`Element status-${taskId} not found`);
-            return;
-        }
+        if (!data || !data.status) return;
 
         if (data.status === 'completed') {
-            statusCell.innerHTML = '<span class="badge bg-success">Completed</span>';
+            eventObj.setProp('color', 'green');
         } else {
-            statusCell.innerHTML = '<span class="badge bg-warning text-dark">Pending</span>';
+            eventObj.setProp('color', 'orange');
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-    });
+    .catch(err => console.error('Toggle error:', err));
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const buttons = document.querySelectorAll('.toggle-btn');
+document.addEventListener('DOMContentLoaded', function () {
+    const calendarEl = document.getElementById('calendar');
 
-    buttons.forEach(button => {
-        button.addEventListener('click', function () {
-            const taskId = this.dataset.id;
-            toggleTask(taskId);
-        });
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: 650,
+        events: events,
+
+        eventClick: function(info) {
+            const taskId = info.event.id;
+            toggleTask(taskId, info.event);
+        }
     });
+
+    calendar.render();
 });
