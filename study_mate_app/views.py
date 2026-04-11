@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
-from .models import Subject, UserSubject, User, StudyPlan, StudyPlanItem, StudySession
+from .models import Subject, UserSubject, User, StudyPlan, StudyPlanItem, StudySession, UserBadge
 from openai import OpenAI
 import json
 from datetime import date, timedelta
@@ -72,7 +72,10 @@ def login(request):
                 messages.error(request, value)
             return redirect('auth')
 
-        user = User.objects.get(email=request.POST['email'])
+        user = User.objects.filter(email=request.POST['email']).first()
+        if not user:
+            messages.error(request, "Invalid email or password.")
+            return redirect('auth')
 
         request.session['user_id'] = user.id
         return redirect('profile_dashboard')
@@ -316,6 +319,7 @@ def profile_page(request):
     total_hours = round(total_minutes / 60, 2)
 
     xp_data = User.objects.get_xp_progress(user)
+    earned_badges = UserBadge.objects.filter(user=user).select_related('badge')
     next_badge = User.objects.get_next_badge(user)
     weekly_data = StudySession.objects.weekly_data(user)
 
@@ -323,8 +327,26 @@ def profile_page(request):
         'user': user,
         'total_hours': total_hours,
         'xp_data': xp_data,
+        'earned_badges': earned_badges,
         'next_badge': next_badge,
         'weekly_data': weekly_data
     }
 
     return render(request, 'profile_page.html' , context=context)
+
+def edit_profile(request):
+    if not request.session.get('user_id'):
+        return redirect('auth')
+    user = User.objects.get(id=request.session['user_id'])
+
+    if request.method == 'POST':
+        user.profile_edition(
+            first_name=request.POST['first_name'],
+            last_name=request.POST['last_name'],
+            email=request.POST['email'],
+            password=request.POST.get('password'),
+            profile_image=request.FILES.get('profile_image')
+        )
+        return redirect('profile_page')
+
+    return render(request, 'edit_profile.html', {'user': user})
