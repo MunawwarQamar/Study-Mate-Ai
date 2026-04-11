@@ -11,6 +11,7 @@ urlpatterns = [
     path('contact-us/', views.contact_us, name='contact_us'),
     #profile
     path('profile/', views.profile_page, name='profile_page'),
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
     # Subjects
     path('subjects/' , views.all_subjects, name='all_subjects'),
     path('subjects/add/' , views.add_subject, name='add_subject'),

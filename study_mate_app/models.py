@@ -87,6 +87,13 @@ class UserManager(models.Manager):
 
         user.last_study_date = today
         user.save()
+        badges = Badge.objects.all()
+
+        for badge in badges:
+            if user.xp_points >= badge.xp_required:
+                already_earned = UserBadge.objects.filter(user=user, badge=badge).exists()
+                if not already_earned:
+                    UserBadge.objects.create(user=user, badge=badge)
 
     def get_xp_progress(self, user):
         level = user.xp_points // 100
@@ -100,17 +107,27 @@ class UserManager(models.Manager):
         }
 
     def get_next_badge(self, user):
-        badges = [
-            {'name': 'Beginner', 'xp': 50},
-            {'name': 'Focused', 'xp': 100},
-            {'name': 'Master', 'xp': 150},
-            {'name': 'Legend', 'xp': 200},
-        ]
-
+        badges = Badge.objects.all().order_by('xp_required')
         for badge in badges:
-            if user.xp_points < badge['xp']:
+            already_has = UserBadge.objects.filter(user=user, badge=badge).exists()
+            if not already_has and user.xp_points < badge.xp_required:
                 return badge
         return None
+    
+    def profile_edition(self, first_name, last_name, email, password=None, profile_image=None):
+        self.first_name = first_name
+        self.last_name = last_name
+        self.email = email
+
+        if profile_image:
+            self.profile_image = profile_image
+
+        if password:
+            self.password = bcrypt.hashpw(
+                password.encode(), bcrypt.gensalt()
+            ).decode()
+
+        self.save()
     
     def validate_login(self , data):
         errors={}
@@ -148,17 +165,17 @@ class StudySessionManager(models.Manager):
         today = date.today()
         start = today - timedelta(days=6)
 
-        # Get sessions for this user in last 7 days
-        sessions = self.filter(
-            user_subject__user=user,
-            date__range=[start, today]
-        )
 
         result = {}
         for i in range(7):
             day = start + timedelta(days=i)
             result[str(day)] = 0
 
+        sessions = self.filter(
+            user_subject__user=user,
+            date__range=[start, today]
+        )
+        
         for session in sessions:
             day=str(session.date)
             result[day] += session.duration_minutes / 60
@@ -184,6 +201,19 @@ class User(models.Model):
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
+
+class Badge(models.Model):
+    name = models.CharField(max_length=50)
+    xp_required = models.IntegerField()
+    icon = models.ImageField(upload_to='badges/', blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+class UserBadge(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
+    earned_at = models.DateTimeField(auto_now_add=True)
 
 class Subject(models.Model):
     name = models.CharField(max_length=100)
@@ -234,7 +264,7 @@ class StudyPlanItem(models.Model):
     study_date = models.DateField()
     planned_hours = models.DecimalField(max_digits=4, decimal_places=2)
     STATUS_CHOICES = [
-        {'pending' , 'Pending'},
+        ('pending' , 'Pending'),
         ('completed' , 'Completed')
     ]
 
