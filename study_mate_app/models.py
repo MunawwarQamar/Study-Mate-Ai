@@ -75,59 +75,6 @@ class UserManager(models.Manager):
 
         user.save()
         return user
-
-    def add_xp_and_streak(self, user, xp=5):
-        user.xp_points += xp
-        today = date.today()
-
-        if user.last_study_date == today - timedelta(days=1):
-            user.current_streak += 1
-        elif user.last_study_date != today:
-            user.current_streak = 1
-
-        user.last_study_date = today
-        user.save()
-        badges = Badge.objects.all()
-
-        for badge in badges:
-            if user.xp_points >= badge.xp_required:
-                already_earned = UserBadge.objects.filter(user=user, badge=badge).exists()
-                if not already_earned:
-                    UserBadge.objects.create(user=user, badge=badge)
-
-    def get_xp_progress(self, user):
-        level = user.xp_points // 100
-        current_xp = user.xp_points % 100
-
-        return {
-            'level': level,
-            'current_xp': current_xp,
-            'next_level_xp': 100,
-            'progress_percent': int((current_xp / 100) * 100)
-        }
-
-    def get_next_badge(self, user):
-        badges = Badge.objects.all().order_by('xp_required')
-        for badge in badges:
-            already_has = UserBadge.objects.filter(user=user, badge=badge).exists()
-            if not already_has and user.xp_points < badge.xp_required:
-                return badge
-        return None
-    
-    def profile_edition(self, first_name, last_name, email, password=None, profile_image=None):
-        self.first_name = first_name
-        self.last_name = last_name
-        self.email = email
-
-        if profile_image:
-            self.profile_image = profile_image
-
-        if password:
-            self.password = bcrypt.hashpw(
-                password.encode(), bcrypt.gensalt()
-            ).decode()
-
-        self.save()
     
     def validate_login(self , data):
         errors={}
@@ -155,9 +102,9 @@ class UserManager(models.Manager):
 
 class StudySessionManager(models.Manager):
     def log_session(self, user_subject, duration_minutes, notes, session_date):
-        session = self.create(user_subject=user_subject, duration_minutes=duration_minutes, notes=notes , session_date=session_date)
-        user = user_subject.user
-        User.objects.add_xp_and_streak(user)
+        session = self.create(user_subject=user_subject, duration_minutes=duration_minutes, notes=notes , date=session_date)
+        xp = max(1, duration_minutes // 10)
+        user_subject.user.add_xp_and_streak(xp)
 
         return session
     
@@ -201,6 +148,70 @@ class User(models.Model):
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
+    
+    def add_xp_and_streak(self, xp=5):
+        self.xp_points += xp
+        today = date.today()
+
+        if self.last_study_date == today - timedelta(days=1):
+            self.current_streak += 1
+        elif self.last_study_date != today:
+            self.current_streak = 1
+
+        self.last_study_date = today
+        self.save()
+        self.check_badges()
+
+    def check_badges(self):
+        from .models import Badge, UserBadge
+        badges = Badge.objects.all()
+
+        for badge in badges:
+            if self.xp_points >= badge.xp_required:
+                already_earned = UserBadge.objects.filter(
+                    user=self,
+                    badge=badge
+                ).exists()
+
+                if not already_earned:
+                    UserBadge.objects.create(
+                        user=self,
+                        badge=badge
+                    )
+
+    def get_xp_progress(self):
+        level = self.xp_points // 100
+        current_xp = self.xp_points % 100
+
+        return {
+            'level': level,
+            'current_xp': current_xp,
+            'next_level_xp': 100,
+            'progress_percent': int((current_xp / 100) * 100)
+        }
+
+    def get_next_badge(self):
+        badges = Badge.objects.all().order_by('xp_required')
+        for badge in badges:
+            already_has = UserBadge.objects.filter(user=self, badge=badge).exists()
+            if not already_has and self.xp_points < badge.xp_required:
+                return badge
+        return None
+    
+    def profile_edition(self, first_name, last_name, email, password=None, profile_image=None):
+        self.first_name = first_name
+        self.last_name = last_name
+        self.email = email
+
+        if profile_image:
+            self.profile_image = profile_image
+
+        if password:
+            self.password = bcrypt.hashpw(
+                password.encode(), bcrypt.gensalt()
+            ).decode()
+
+        self.save()
 
 class Badge(models.Model):
     name = models.CharField(max_length=50)
@@ -211,7 +222,7 @@ class Badge(models.Model):
         return self.name
 
 class UserBadge(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_badges')
     badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
     earned_at = models.DateTimeField(auto_now_add=True)
 
