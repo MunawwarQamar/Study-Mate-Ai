@@ -78,7 +78,7 @@ def login(request):
             return redirect('auth')
 
         request.session['user_id'] = user.id
-        return redirect('profile_dashboard')
+        return redirect('profile_page')
 
     return redirect('auth')
 
@@ -318,9 +318,9 @@ def profile_page(request):
         total_minutes += s.duration_minutes
     total_hours = round(total_minutes / 60, 2)
 
-    xp_data = User.objects.get_xp_progress(user)
+    xp_data = user.get_xp_progress()
     earned_badges = UserBadge.objects.filter(user=user).select_related('badge')
-    next_badge = User.objects.get_next_badge(user)
+    next_badge = user.get_next_badge()
     weekly_data = StudySession.objects.weekly_data(user)
 
     context = {
