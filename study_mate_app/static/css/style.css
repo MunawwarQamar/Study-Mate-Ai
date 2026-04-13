@@ -318,6 +318,7 @@ form textarea {
     }
 }
 
+/* Statistics */
 .statistics-clean-page {
     display: flex;
     flex-direction: column;
@@ -326,20 +327,28 @@ form textarea {
 
 .stats-header-row {
     display: flex;
-    justify-content: flex-start;
+    justify-content: center;
     align-items: center;
+    margin-bottom: 4px;
 }
 
 .stats-tabs {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    padding: 6px;
-    background: #F1F5F9;
-    border-radius: 16px;
+    padding: 8px;
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
 }
 
 .stats-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
     border: none;
     background: transparent;
     color: var(--muted);
@@ -350,10 +359,15 @@ form textarea {
     transition: 0.2s ease;
 }
 
-.stats-tab.active {
-    background: var(--surface);
+.stats-tab:hover {
+    background: #F8FAFC;
     color: var(--text);
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.stats-tab.active {
+    background: var(--primary-light);
+    color: var(--primary);
+    box-shadow: none;
 }
 
 .stats-overview-card {
@@ -382,6 +396,7 @@ form textarea {
     font-weight: 700;
     color: var(--text);
     margin-bottom: 8px;
+    line-height: 1.1;
 }
 
 .overview-note {
@@ -435,7 +450,9 @@ form textarea {
     height: 320px;
 }
 
-.record-list {
+.record-list,
+.subject-progress-list,
+.focus-subject-list {
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -467,6 +484,11 @@ form textarea {
     box-shadow: 0 0 0 6px rgba(79, 70, 229, 0.10);
 }
 
+.done-dot {
+    background: #22C55E;
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.12);
+}
+
 .record-subject {
     font-size: 16px;
     font-weight: 600;
@@ -488,6 +510,80 @@ form textarea {
     white-space: nowrap;
 }
 
+.subject-progress-list,
+.focus-subject-list {
+    gap: 18px;
+}
+
+.subject-progress-item {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 2px 0 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.subject-progress-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.subject-progress-top,
+.focus-subject-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.subject-progress-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.subject-progress-meta {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.subject-progress-percent {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+    white-space: nowrap;
+}
+
+.subject-progress-bar-wrap {
+    width: 100%;
+    height: 10px;
+    background: #EAEFF6;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.subject-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4F46E5 0%, #7C74FF 100%);
+    border-radius: 999px;
+}
+
+.focus-subject-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.focus-subject-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.empty-stat-state {
+    padding: 18px 0;
+    color: var(--muted);
+    text-align: center;
+}
+
 @media (max-width: 1200px) {
     .stats-overview-grid {
         grid-template-columns: repeat(4, 1fr);
@@ -500,6 +596,16 @@ form textarea {
 }
 
 @media (max-width: 768px) {
+    .stats-header-row {
+        justify-content: center;
+    }
+
+    .stats-tabs {
+        width: 100%;
+        max-width: 100%;
+        flex-wrap: wrap;
+    }
+
     .stats-overview-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -514,6 +620,12 @@ form textarea {
     }
 
     .record-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .subject-progress-top,
+    .focus-subject-item {
         flex-direction: column;
         align-items: flex-start;
     }
