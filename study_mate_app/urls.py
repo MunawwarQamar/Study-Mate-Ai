@@ -5,7 +5,8 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('dashboard/add-session-ajax/', views.add_study_session_ajax, name='add_study_session_ajax'),
     path('statistics/', views.statistics, name='statistics'),
-    
+    path('study-rooms/', views.study_rooms, name='study_rooms'),
+    path('notifications/', views.notifications_page, name='notifications_page'),
     path('', views.home),
     path('auth/', views.auth_page, name='auth'),
     path('login/', views.login, name='login'),

@@ -22,7 +22,7 @@
     <div class="app-shell">
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-          <a href="#" class="brand">
+          <a href="{% url 'dashboard' %}" class="brand">
             <span class="brand-mark">S</span>
             <span class="brand-text">StudyMate AI</span>
           </a>
@@ -31,6 +31,7 @@
             class="sidebar-close d-lg-none"
             id="sidebarClose"
             type="button"
+            aria-label="Close sidebar"
           >
             <i class="bi bi-x-lg"></i>
           </button>
@@ -39,38 +40,56 @@
         <nav class="sidebar-nav">
           <a
             href="{% url 'dashboard' %}"
-            class="nav-link-custom active"
+            class="nav-link-custom {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
           >
             <i class="bi bi-grid-1x2"></i>
             <span>Dashboard</span>
           </a>
 
-          <a href="{% url 'all_subjects' %}" class="nav-link-custom">
+          <a
+            href="{% url 'all_subjects' %}"
+            class="nav-link-custom {% if request.resolver_match.url_name == 'all_subjects' or request.resolver_match.url_name == 'add_subject' or request.resolver_match.url_name == 'edit_subject' %}active{% endif %}"
+          >
             <i class="bi bi-book"></i>
             <span>Subjects</span>
           </a>
 
-          <a href="{% url 'study_plan' %}" class="nav-link-custom">
+          <a
+            href="{% url 'study_plan' %}"
+            class="nav-link-custom {% if request.resolver_match.url_name == 'study_plan' or request.resolver_match.url_name == 'generate_plan' %}active{% endif %}"
+          >
             <i class="bi bi-stars"></i>
             <span>Study Plan AI</span>
           </a>
 
-          <a href="{% url 'all_tasks' %}" class="nav-link-custom">
+          <a
+            href="{% url 'all_tasks' %}"
+            class="nav-link-custom {% if request.resolver_match.url_name == 'all_tasks' or request.resolver_match.url_name == 'toggle_task' or request.resolver_match.url_name == 'toggle_task_ajax' %}active{% endif %}"
+          >
             <i class="bi bi-check2-square"></i>
             <span>Tasks</span>
           </a>
 
-          <a href="#" class="nav-link-custom">
+          <a
+            href="{% url 'statistics' %}"
+            class="nav-link-custom {% if request.resolver_match.url_name == 'statistics' %}active{% endif %}"
+          >
             <i class="bi bi-bar-chart"></i>
             <span>Statistics</span>
           </a>
 
-          <a href="#" class="nav-link-custom">
+          <a
+            href="{% url 'study_rooms' %}"
+            class="nav-link-custom {% if request.resolver_match.url_name == 'study_rooms' %}active{% endif %}"
+          >
             <i class="bi bi-people"></i>
             <span>Study Rooms</span>
           </a>
 
-          <a href="#" class="nav-link-custom">
+          <a
+            href="{% url 'profile_page' %}"
+            class="nav-link-custom {% if request.resolver_match.url_name == 'profile_page' %}active{% endif %}"
+          >
             <i class="bi bi-person"></i>
             <span>Profile</span>
           </a>
@@ -82,7 +101,12 @@
       <div class="main-wrapper">
         <header class="topbar">
           <div class="topbar-left">
-            <button class="menu-toggle d-lg-none" id="menuToggle" type="button">
+            <button
+              class="menu-toggle d-lg-none"
+              id="menuToggle"
+              type="button"
+              aria-label="Open menu"
+            >
               <i class="bi bi-list"></i>
             </button>
 
@@ -103,13 +127,23 @@
               <span>7 days</span>
             </div>
 
-            <button class="icon-btn" type="button">
+            <a
+              href="{% url 'notifications_page' %}"
+              class="icon-btn text-decoration-none"
+              title="Notifications"
+              aria-label="Notifications"
+            >
               <i class="bi bi-bell"></i>
-            </button>
+            </a>
 
-            <button class="profile-btn" type="button">
+            <a
+              href="{% url 'profile_page' %}"
+              class="profile-btn text-decoration-none"
+              title="Profile"
+              aria-label="Profile"
+            >
               <i class="bi bi-person"></i>
-            </button>
+            </a>
           </div>
         </header>
 
@@ -132,26 +166,38 @@
       const sidebarClose = document.getElementById("sidebarClose");
       const sidebarOverlay = document.getElementById("sidebarOverlay");
 
+      function openSidebar() {
+        sidebar.classList.add("show");
+        sidebarOverlay.classList.add("show");
+      }
+
+      function closeSidebar() {
+        sidebar.classList.remove("show");
+        sidebarOverlay.classList.remove("show");
+      }
+
       if (menuToggle) {
-        menuToggle.addEventListener("click", () => {
-          sidebar.classList.add("show");
-          sidebarOverlay.classList.add("show");
-        });
+        menuToggle.addEventListener("click", openSidebar);
       }
 
       if (sidebarClose) {
-        sidebarClose.addEventListener("click", () => {
-          sidebar.classList.remove("show");
-          sidebarOverlay.classList.remove("show");
-        });
+        sidebarClose.addEventListener("click", closeSidebar);
       }
 
       if (sidebarOverlay) {
-        sidebarOverlay.addEventListener("click", () => {
-          sidebar.classList.remove("show");
-          sidebarOverlay.classList.remove("show");
-        });
+        sidebarOverlay.addEventListener("click", closeSidebar);
       }
+
+      document.querySelectorAll(".sidebar .nav-link-custom").forEach((link) => {
+        link.addEventListener("click", () => {
+          if (
+            window.innerWidth < 992 &&
+            !link.classList.contains("disabled-link")
+          ) {
+            closeSidebar();
+          }
+        });
+      });
     </script>
 
     {% block extra_js %}{% endblock %}
