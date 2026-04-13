@@ -565,3 +565,26 @@ def edit_profile(request):
         return redirect('profile_page')
 
     return render(request, 'edit_profile.html', {'user': user})
+
+def study_rooms(request):
+    if not request.session.get('user_id'):
+        return redirect('auth')
+
+    user = User.objects.get(id=request.session['user_id'])
+
+    context = {
+        'user': user,
+    }
+    return render(request, 'study_rooms.html', context)
+
+
+def notifications_page(request):
+    if not request.session.get('user_id'):
+        return redirect('auth')
+
+    user = User.objects.get(id=request.session['user_id'])
+
+    context = {
+        'user': user,
+    }
+    return render(request, 'notifications.html', context)
