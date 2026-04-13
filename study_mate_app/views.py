@@ -1,3 +1,5 @@
+import httpx
+import os
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from .models import Subject, UserSubject, User, StudyPlan, StudyPlanItem, StudySession, UserBadge
@@ -595,53 +597,157 @@ def study_plan(request):
         'days':['Monday', 'Tuesday', 'Wednesday', 'Thursday' , 'Friday', 'Saturday', 'Sunday']
     })
 
+
 def generate_plan(request):
     if request.method == 'POST':
-        user = User.objects.get(id=request.session['user_id'])
-        available_hours = request.POST['available_hours']
-        blocked_days = request.POST.getlist('blocked_days')
-        user_subjects = UserSubject.objects.filter(user=user).select_related('subject')
+        try:
+            user = User.objects.get(id=request.session['user_id'])
+            available_hours = float(request.POST.get('available_hours', 4))
+            blocked_days = request.POST.getlist('blocked_days')
+            user_subjects = UserSubject.objects.filter(user=user).select_related('subject')
 
-        # Mock AI plan
-        plan_data = []
-        current_date = date.today()
-        subjects_list = list(user_subjects)
-        days_added = 0
-
-        while days_added < 7:
-            day_name = current_date.strftime('%A')
-            if day_name not in blocked_days:
-                for us in subjects_list:
-                    plan_data.append({
-                        "date": str(current_date),
-                        "subject": us.subject.name,
-                        "hours": round(float(available_hours) / len(subjects_list), 1)
-                    })
-                days_added += 1
-            current_date += timedelta(days=1)
-
-        # Save the plan
-        study_plan = StudyPlan.objects.create(
-            user=user,
-            week_start=date.today(),
-            generated_by_ai="mock"
-        )
-
-        # Save each item
-        for item in plan_data:
-            subject_name = item['subject']
-            us = user_subjects.filter(subject__name=subject_name).first()
-            if us:
-                StudyPlanItem.objects.create(
-                    study_plan=study_plan,
-                    user_subject=us,
-                    study_date=item['date'],
-                    planned_hours=item['hours'],
-                    status='pending'
+            subjects_info = []
+            for us in user_subjects:
+                subjects_info.append(
+                    f"- {us.subject.name} (Exam: {us.exam_date}, Priority: {us.priority})"
                 )
+            subjects_text = "\n".join(subjects_info)
+            blocked_text = ", ".join(blocked_days) if blocked_days else "None"
+            today = date.today()
 
-        return redirect('study_plan')
+            blocked_dates = []
+            current = today
+            for i in range(7):
+                if current.strftime('%A') in blocked_days:
+                    blocked_dates.append(str(current))
+                current += timedelta(days=1)
+            blocked_dates_text = ", ".join(blocked_dates) if blocked_dates else "None"
+
+            prompt = f"""
+You are a smart study planner. Generate a 7-day study plan starting from {today}.
+Student's subjects:
+{subjects_text}
+Available study hours per day: {available_hours} hours
+Blocked days (no studying): {blocked_text}
+Blocked dates (do NOT put any session on these dates): {blocked_dates_text}
+IMPORTANT: ALL days of the week are valid study days (including Sunday and Saturday) UNLESS they appear in the blocked dates above. Do NOT skip any day unless it is explicitly in the blocked dates list.
+Return ONLY a JSON array, no extra text:
+[
+  {{"date": "YYYY-MM-DD", "subject": "Subject Name", "hours": 2}},
+  {{"date": "YYYY-MM-DD", "subject": "Subject Name", "hours": 1.5}}
+]
+Rules:
+- Skip blocked days completely
+- Prioritize high priority subjects
+- Split hours across subjects on the same day if needed
+- Don't exceed available hours per day
+- Focus on subjects with closer exam dates
+- Do not schedule a subject after its exam date
+"""
+
+            response = httpx.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {os.getenv('GROQ_API_KEY')}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": [
+                        {"role": "system", "content": "You ONLY return valid JSON array, no markdown, no extra text."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "max_tokens": 1000,
+                    "temperature": 0.7
+                },
+                timeout=30
+            )
+
+            response_text = response.json()['choices'][0]['message']['content'].strip()
+            response_text = response_text.replace("```json", "").replace("```", "").strip()
+
+            try:
+                plan_data = json.loads(response_text)
+            except json.JSONDecodeError:
+                print("Invalid JSON from AI:", response_text)
+                return redirect('study_plan')
+            StudyPlan.objects.filter(user=user).delete()
+            study_plan = StudyPlan.objects.create(
+                user=user,
+                week_start=today,
+                generated_by_ai=response_text
+            )
+
+            for item in plan_data:
+                subject_name = item.get('subject')
+                study_date = item.get('date')
+                hours = item.get('hours')
+                us = user_subjects.filter(subject__name=subject_name).first()
+                if us and study_date and hours:
+                    StudyPlanItem.objects.create(
+                        study_plan=study_plan,
+                        user_subject=us,
+                        study_date=study_date,
+                        planned_hours=hours,
+                        status='pending'
+                    )
+
+            return redirect('study_plan')
+
+        except Exception as e:
+            print("Error generating plan:", str(e))
+            return redirect('study_plan')
+
     return redirect('study_plan')
+
+
+# def generate_plan(request):
+#     if request.method == 'POST':
+#         user = User.objects.get(id=request.session['user_id'])
+#         available_hours = request.POST['available_hours']
+#         blocked_days = request.POST.getlist('blocked_days')
+#         user_subjects = UserSubject.objects.filter(user=user).select_related('subject')
+
+#         # Mock AI plan
+#         plan_data = []
+#         current_date = date.today()
+#         subjects_list = list(user_subjects)
+#         days_added = 0
+
+#         while days_added < 7:
+#             day_name = current_date.strftime('%A')
+#             if day_name not in blocked_days:
+#                 for us in subjects_list:
+#                     plan_data.append({
+#                         "date": str(current_date),
+#                         "subject": us.subject.name,
+#                         "hours": round(float(available_hours) / len(subjects_list), 1)
+#                     })
+#                 days_added += 1
+#             current_date += timedelta(days=1)
+
+#         # Save the plan
+#         study_plan = StudyPlan.objects.create(
+#             user=user,
+#             week_start=date.today(),
+#             generated_by_ai="mock"
+#         )
+
+#         # Save each item
+#         for item in plan_data:
+#             subject_name = item['subject']
+#             us = user_subjects.filter(subject__name=subject_name).first()
+#             if us:
+#                 StudyPlanItem.objects.create(
+#                     study_plan=study_plan,
+#                     user_subject=us,
+#                     study_date=item['date'],
+#                     planned_hours=item['hours'],
+#                     status='pending'
+#                 )
+
+#         return redirect('study_plan')
+#     return redirect('study_plan')
 
 #Todo:replace with real Ai when credits are avaliable
 
