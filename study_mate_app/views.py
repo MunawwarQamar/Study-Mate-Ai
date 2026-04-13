@@ -9,7 +9,6 @@ from django.views.decorators.http import require_POST
 from django.db.models import Sum
 from django.utils import timezone
 
-
 def dashboard(request):
     if not request.session.get('user_id'):
         return redirect('auth')
@@ -212,34 +211,268 @@ def add_study_session_ajax(request):
             'success': False,
             'message': str(e)
         }, status=500)
-    
-    
+
+
+import json
+from django.shortcuts import render, redirect
+from .models import User
+
+
 def statistics(request):
+    if not request.session.get('user_id'):
+        return redirect('auth')
+
+    user = User.objects.get(id=request.session['user_id'])
+    active_tab = request.GET.get('tab', 'overview')
+
+    activity_period = request.GET.get('activity_period', 'weekly')
+    distribution_period = request.GET.get('distribution_period', 'weekly')
+    record_period = request.GET.get('record_period', 'weekly')
+
+    allowed_periods = ['daily', 'weekly', 'monthly', 'yearly']
+
+    if active_tab not in ['overview', 'tasks', 'focus']:
+        active_tab = 'overview'
+
+    if activity_period not in allowed_periods:
+        activity_period = 'weekly'
+
+    if distribution_period not in allowed_periods:
+        distribution_period = 'weekly'
+
+    if record_period not in allowed_periods:
+        record_period = 'weekly'
+
+    today = timezone.localdate()
+
+    all_sessions = StudySession.objects.filter(
+        user_subject__user=user
+    ).select_related('user_subject__subject').order_by('-date', '-created_at')
+
+    all_tasks = StudyPlanItem.objects.filter(
+        user_subject__user=user
+    ).select_related('user_subject__subject').order_by('-study_date', '-created_at')
+
+    user_subjects = UserSubject.objects.filter(user=user).select_related('subject')
+
+    def get_period_range(period_key):
+        if period_key == 'daily':
+            start_date = today
+            end_date = today
+        elif period_key == 'weekly':
+            start_date = today - timedelta(days=6)
+            end_date = today
+        elif period_key == 'monthly':
+            start_date = today - timedelta(days=29)
+            end_date = today
+        else:  # yearly
+            start_date = today - timedelta(days=364)
+            end_date = today
+        return start_date, end_date
+
+    def get_sessions_for_period(period_key):
+        start_date, end_date = get_period_range(period_key)
+        return all_sessions.filter(date__range=[start_date, end_date])
+
+    def get_tasks_for_period(period_key):
+        start_date, end_date = get_period_range(period_key)
+        return all_tasks.filter(study_date__range=[start_date, end_date])
+
+    def build_activity_chart(period_key):
+        sessions = get_sessions_for_period(period_key)
+
+        if period_key == 'daily':
+            labels = ["12 AM", "4 AM", "8 AM", "12 PM", "4 PM", "8 PM"]
+            buckets = {label: 0 for label in labels}
+
+            for session in sessions:
+                hour = session.created_at.hour if session.created_at else 12
+
+                if 0 <= hour < 4:
+                    buckets["12 AM"] += session.duration_minutes / 60
+                elif 4 <= hour < 8:
+                    buckets["4 AM"] += session.duration_minutes / 60
+                elif 8 <= hour < 12:
+                    buckets["8 AM"] += session.duration_minutes / 60
+                elif 12 <= hour < 16:
+                    buckets["12 PM"] += session.duration_minutes / 60
+                elif 16 <= hour < 20:
+                    buckets["4 PM"] += session.duration_minutes / 60
+                else:
+                    buckets["8 PM"] += session.duration_minutes / 60
+
+            return labels, [round(buckets[label], 1) for label in labels]
+
+        elif period_key == 'weekly':
+            start_date, _ = get_period_range(period_key)
+            labels = []
+            buckets = {}
+
+            for i in range(7):
+                current_day = start_date + timedelta(days=i)
+                key = current_day.strftime('%a')
+                labels.append(key)
+                buckets[str(current_day)] = 0
+
+            for session in sessions:
+                buckets[str(session.date)] = buckets.get(str(session.date), 0) + (session.duration_minutes / 60)
+
+            data = []
+            for i in range(7):
+                current_day = start_date + timedelta(days=i)
+                data.append(round(buckets.get(str(current_day), 0), 1))
+
+            return labels, data
+
+        elif period_key == 'monthly':
+            start_date, _ = get_period_range(period_key)
+            labels = ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5"]
+            buckets = {label: 0 for label in labels}
+
+            for session in sessions:
+                diff_days = (session.date - start_date).days
+                week_index = min(diff_days // 7, 4)
+                bucket_label = labels[week_index]
+                buckets[bucket_label] += session.duration_minutes / 60
+
+            return labels, [round(buckets[label], 1) for label in labels]
+
+        else:  # yearly
+            labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            buckets = {label: 0 for label in labels}
+
+            for session in sessions:
+                month_label = session.date.strftime('%b')
+                if month_label in buckets:
+                    buckets[month_label] += session.duration_minutes / 60
+
+            return labels, [round(buckets[label], 1) for label in labels]
+
+    def build_distribution_stats(period_key):
+        sessions = get_sessions_for_period(period_key)
+        subject_map = {}
+
+        for session in sessions:
+            subject_name = session.user_subject.subject.name
+            subject_map[subject_name] = subject_map.get(subject_name, 0) + (session.duration_minutes / 60)
+
+        total_hours = sum(subject_map.values())
+        subject_stats = []
+
+        for subject_name, hours in subject_map.items():
+            progress = int((hours / total_hours) * 100) if total_hours else 0
+            subject_stats.append({
+                'name': subject_name,
+                'hours': round(hours, 1),
+                'progress': progress,
+            })
+
+        subject_stats.sort(key=lambda item: item['hours'], reverse=True)
+        return subject_stats
+
+    def build_latest_sessions(period_key):
+        sessions = get_sessions_for_period(period_key)
+        return list(sessions[:6])
+
+    def build_recent_completed_tasks(period_key):
+        tasks = get_tasks_for_period(period_key).filter(status='completed')
+        return list(tasks[:5])
+
+    def build_task_subject_stats(period_key):
+        tasks = get_tasks_for_period(period_key)
+        result = []
+
+        for user_subject in user_subjects:
+            subject_tasks = tasks.filter(user_subject=user_subject)
+            subject_total = subject_tasks.count()
+            subject_completed = subject_tasks.filter(status='completed').count()
+            subject_progress = int((subject_completed / subject_total) * 100) if subject_total else 0
+
+            if subject_total > 0:
+                result.append({
+                    'name': user_subject.subject.name,
+                    'total': subject_total,
+                    'completed': subject_completed,
+                    'pending': max(subject_total - subject_completed, 0),
+                    'progress': subject_progress,
+                })
+
+        result.sort(key=lambda item: item['progress'], reverse=True)
+        return result
+
+    def build_top_stats(period_key):
+        sessions = get_sessions_for_period(period_key)
+        tasks = get_tasks_for_period(period_key)
+
+        total_minutes = sum(session.duration_minutes for session in sessions)
+        total_hours = round(total_minutes / 60, 1)
+
+        start_date, end_date = get_period_range(period_key)
+        total_days = (end_date - start_date).days + 1
+        avg_daily_hours = round((total_minutes / 60) / total_days, 1) if total_days > 0 else 0
+
+        completed_tasks = tasks.filter(status='completed').count()
+        pending_tasks = tasks.filter(status='pending').count()
+        total_tasks = tasks.count()
+
+        avg_session_minutes = round(total_minutes / sessions.count(), 1) if sessions.exists() else 0
+        longest_session_minutes = sessions.order_by('-duration_minutes').first().duration_minutes if sessions.exists() else 0
+        studied_days_count = len(set(session.date for session in sessions))
+
+        return {
+            'completed_tasks': completed_tasks,
+            'pending_tasks': pending_tasks,
+            'total_tasks': total_tasks,
+            'weekly_completed_tasks': completed_tasks,
+            'total_study_hours': total_hours,
+            'weekly_study_hours': total_hours,
+            'avg_daily_hours': avg_daily_hours,
+            'avg_session_minutes': avg_session_minutes,
+            'longest_session_minutes': longest_session_minutes,
+            'studied_days_count': studied_days_count,
+        }
+
+    activity_labels, activity_data = build_activity_chart(activity_period)
+    distribution_stats = build_distribution_stats(distribution_period)
+    latest_sessions = build_latest_sessions(record_period)
+    recent_completed_tasks = build_recent_completed_tasks(record_period)
+    task_subject_stats = build_task_subject_stats(distribution_period)
+    top_stats = build_top_stats(activity_period)
+
     context = {
-        'user': {
-            'first_name': 'Munawwar',
-        },
-        'completed_tasks': 24,
-        'total_study_hours': 42.5,
-        'avg_daily_hours': 3.6,
-        'current_streak': 7,
+        'user': user,
+        'active_tab': active_tab,
 
-        'subject_stats': [
-            {'name': 'Frontend Development', 'hours': 14, 'progress': 82},
-            {'name': 'Database Systems', 'hours': 10, 'progress': 68},
-            {'name': 'UI/UX Design', 'hours': 8, 'progress': 74},
-            {'name': 'Python Practice', 'hours': 10.5, 'progress': 61},
-        ],
+        'activity_period': activity_period,
+        'distribution_period': distribution_period,
+        'record_period': record_period,
 
-        'leaderboard': [
-            {'name': 'Munawwar', 'hours': 12.5},
-            {'name': 'Rafeef', 'hours': 11},
-            {'name': 'Basel', 'hours': 9.5},
-            {'name': 'Majd', 'hours': 8},
-        ],
+        'completed_tasks': top_stats['completed_tasks'],
+        'pending_tasks': top_stats['pending_tasks'],
+        'total_tasks': top_stats['total_tasks'],
+        'weekly_completed_tasks': top_stats['weekly_completed_tasks'],
+
+        'total_study_hours': top_stats['total_study_hours'],
+        'weekly_study_hours': top_stats['weekly_study_hours'],
+        'avg_daily_hours': top_stats['avg_daily_hours'],
+        'current_streak': user.current_streak,
+
+        'avg_session_minutes': top_stats['avg_session_minutes'],
+        'longest_session_minutes': top_stats['longest_session_minutes'],
+        'studied_days_count': top_stats['studied_days_count'],
+
+        'subject_stats': distribution_stats,
+        'task_subject_stats': task_subject_stats,
+        'recent_completed_tasks': recent_completed_tasks,
+        'latest_sessions': latest_sessions,
+
+        'chart_labels': json.dumps(activity_labels),
+        'chart_data': json.dumps(activity_data),
+        'subject_chart_labels': json.dumps([item['name'] for item in distribution_stats]),
+        'subject_chart_data': json.dumps([item['hours'] for item in distribution_stats]),
     }
-    return render(request, 'statistics.html', context)
 
+    return render(request, 'statistics.html', context)
 
 def test_page(request):
     return render(request, 'test.html')

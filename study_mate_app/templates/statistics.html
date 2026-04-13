@@ -7,163 +7,385 @@
 
 {% block content %}
 <div class="statistics-clean-page">
-    <div class="stats-header-row">
+
+    <div class="stats-header-row justify-content-center">
         <div class="stats-tabs">
-            <button class="stats-tab active" type="button">Overview</button>
-            <button class="stats-tab" type="button">Tasks</button>
-            <button class="stats-tab" type="button">Focus</button>
+            <a href="{% url 'statistics' %}?tab=overview&activity_period={{ activity_period }}&distribution_period={{ distribution_period }}&record_period={{ record_period }}"
+               class="stats-tab {% if active_tab == 'overview' %}active{% endif %}">
+                Overview
+            </a>
+
+            <a href="{% url 'statistics' %}?tab=tasks&activity_period={{ activity_period }}&distribution_period={{ distribution_period }}&record_period={{ record_period }}"
+               class="stats-tab {% if active_tab == 'tasks' %}active{% endif %}">
+                Tasks
+            </a>
+
+            <a href="{% url 'statistics' %}?tab=focus&activity_period={{ activity_period }}&distribution_period={{ distribution_period }}&record_period={{ record_period }}"
+               class="stats-tab {% if active_tab == 'focus' %}active{% endif %}">
+                Focus
+            </a>
         </div>
     </div>
 
-    <div class="dashboard-card stats-overview-card">
-        <div class="stats-overview-grid">
-            <div class="overview-metric">
-                <p class="overview-label">Completed Tasks</p>
-                <h2 class="overview-value">{{ completed_tasks }}</h2>
-                <p class="overview-note">This period</p>
-            </div>
-
-            <div class="overview-divider"></div>
-
-            <div class="overview-metric">
-                <p class="overview-label">Study Hours</p>
-                <h2 class="overview-value">{{ total_study_hours }}</h2>
-                <p class="overview-note">Tracked hours</p>
-            </div>
-
-            <div class="overview-divider"></div>
-
-            <div class="overview-metric">
-                <p class="overview-label">Focus Time</p>
-                <h2 class="overview-value">18.4</h2>
-                <p class="overview-note">Hours focused</p>
-            </div>
-
-            <div class="overview-divider"></div>
-
-            <div class="overview-metric">
-                <p class="overview-label">Current Streak</p>
-                <h2 class="overview-value">{{ current_streak }}</h2>
-                <p class="overview-note">Days in a row</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-4 mt-1">
-        <div class="col-12 col-xl-8">
-            <div class="dashboard-card chart-clean-card h-100">
-                <div class="chart-card-head">
-                    <div>
-                        <p class="section-label mb-1">Overview</p>
-                        <h4 class="card-heading mb-0">Study activity</h4>
-                    </div>
-
-                    <select class="form-select clean-select">
-                        <option>Weekly</option>
-                        <option>Monthly</option>
-                        <option>Yearly</option>
-                    </select>
+    {% if active_tab == 'overview' %}
+        <div class="dashboard-card stats-overview-card">
+            <div class="stats-overview-grid">
+                <div class="overview-metric">
+                    <p class="overview-label">Completed Tasks</p>
+                    <h2 class="overview-value">{{ completed_tasks }}</h2>
+                    <p class="overview-note">All completed tasks</p>
                 </div>
 
-                <div class="chart-clean-wrap">
-                    <canvas id="studyActivityChart"></canvas>
+                <div class="overview-divider"></div>
+
+                <div class="overview-metric">
+                    <p class="overview-label">Study Hours</p>
+                    <h2 class="overview-value">{{ total_study_hours }}</h2>
+                    <p class="overview-note">Total tracked hours</p>
+                </div>
+
+                <div class="overview-divider"></div>
+
+                <div class="overview-metric">
+                    <p class="overview-label">Avg Daily Hours</p>
+                    <h2 class="overview-value">{{ avg_daily_hours }}</h2>
+                    <p class="overview-note">Last 7 days</p>
+                </div>
+
+                <div class="overview-divider"></div>
+
+                <div class="overview-metric">
+                    <p class="overview-label">Current Streak</p>
+                    <h2 class="overview-value">{{ current_streak }}</h2>
+                    <p class="overview-note">Days in a row</p>
                 </div>
             </div>
         </div>
 
-        <div class="col-12 col-xl-4">
-            <div class="dashboard-card chart-clean-card h-100">
-                <div class="chart-card-head">
-                    <div>
-                        <p class="section-label mb-1">Distribution</p>
-                        <h4 class="card-heading mb-0">By subject</h4>
+        <div class="row g-4 mt-1">
+            <div class="col-12 col-xl-8">
+                <div class="dashboard-card chart-clean-card h-100">
+                    <div class="chart-card-head">
+                        <div>
+                            <p class="section-label mb-1">Overview</p>
+                            <h4 class="card-heading mb-0">Study activity</h4>
+                        </div>
+
+                        <select class="form-select clean-select stats-filter-select"
+                                data-filter="activity_period">
+                            <option value="daily" {% if activity_period == 'daily' %}selected{% endif %}>Daily</option>
+                            <option value="weekly" {% if activity_period == 'weekly' %}selected{% endif %}>Weekly</option>
+                            <option value="monthly" {% if activity_period == 'monthly' %}selected{% endif %}>Monthly</option>
+                            <option value="yearly" {% if activity_period == 'yearly' %}selected{% endif %}>Yearly</option>
+                        </select>
+                    </div>
+
+                    <div class="chart-clean-wrap">
+                        <canvas id="studyActivityChart"></canvas>
                     </div>
                 </div>
+            </div>
 
-                <div class="chart-clean-wrap small-donut-wrap">
-                    <canvas id="subjectSplitChart"></canvas>
+            <div class="col-12 col-xl-4">
+                <div class="dashboard-card chart-clean-card h-100">
+                    <div class="chart-card-head">
+                        <div>
+                            <p class="section-label mb-1">Distribution</p>
+                            <h4 class="card-heading mb-0">By subject</h4>
+                        </div>
+
+                        <select class="form-select clean-select stats-filter-select"
+                                data-filter="distribution_period">
+                            <option value="daily" {% if distribution_period == 'daily' %}selected{% endif %}>Daily</option>
+                            <option value="weekly" {% if distribution_period == 'weekly' %}selected{% endif %}>Weekly</option>
+                            <option value="monthly" {% if distribution_period == 'monthly' %}selected{% endif %}>Monthly</option>
+                            <option value="yearly" {% if distribution_period == 'yearly' %}selected{% endif %}>Yearly</option>
+                        </select>
+                    </div>
+
+                    <div class="chart-clean-wrap small-donut-wrap">
+                        <canvas id="subjectSplitChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="dashboard-card recent-record-card">
+                    <div class="chart-card-head">
+                        <div>
+                            <p class="section-label mb-1">Recent Record</p>
+                            <h4 class="card-heading mb-0">Latest study sessions</h4>
+                        </div>
+
+                        <select class="form-select clean-select stats-filter-select"
+                                data-filter="record_period">
+                            <option value="daily" {% if record_period == 'daily' %}selected{% endif %}>Daily</option>
+                            <option value="weekly" {% if record_period == 'weekly' %}selected{% endif %}>Weekly</option>
+                            <option value="monthly" {% if record_period == 'monthly' %}selected{% endif %}>Monthly</option>
+                            <option value="yearly" {% if record_period == 'yearly' %}selected{% endif %}>Yearly</option>
+                        </select>
+                    </div>
+
+                    <div class="record-list">
+                        {% if latest_sessions %}
+                            {% for session in latest_sessions %}
+                                <div class="record-item">
+                                    <div class="record-left">
+                                        <div class="record-dot"></div>
+                                        <div>
+                                            <p class="record-subject mb-1">{{ session.user_subject.subject.name }}</p>
+                                            <p class="record-time mb-0">{{ session.date }}</p>
+                                        </div>
+                                    </div>
+                                    <span class="record-duration">{{ session.duration_minutes }} min</span>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-stat-state">
+                                <p class="mb-0">No study sessions yet.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if active_tab == 'tasks' %}
+        <div class="dashboard-card stats-overview-card">
+            <div class="stats-overview-grid">
+                <div class="overview-metric">
+                    <p class="overview-label">Total Tasks</p>
+                    <h2 class="overview-value">{{ total_tasks }}</h2>
+                    <p class="overview-note">All planned tasks</p>
+                </div>
+
+                <div class="overview-divider"></div>
+
+                <div class="overview-metric">
+                    <p class="overview-label">Completed</p>
+                    <h2 class="overview-value">{{ completed_tasks }}</h2>
+                    <p class="overview-note">Finished tasks</p>
+                </div>
+
+                <div class="overview-divider"></div>
+
+                <div class="overview-metric">
+                    <p class="overview-label">Pending</p>
+                    <h2 class="overview-value">{{ pending_tasks }}</h2>
+                    <p class="overview-note">Still to do</p>
+                </div>
+
+                <div class="overview-divider"></div>
+
+                <div class="overview-metric">
+                    <p class="overview-label">This Week</p>
+                    <h2 class="overview-value">{{ weekly_completed_tasks }}</h2>
+                    <p class="overview-note">Completed this week</p>
                 </div>
             </div>
         </div>
 
-        <div class="col-12">
-            <div class="dashboard-card recent-record-card">
-                <div class="chart-card-head">
-                    <div>
-                        <p class="section-label mb-1">Recent Record</p>
-                        <h4 class="card-heading mb-0">Latest study sessions</h4>
+        <div class="row g-4 mt-1">
+            <div class="col-12 col-xl-7">
+                <div class="dashboard-card recent-record-card h-100">
+                    <div class="chart-card-head">
+                        <div>
+                            <p class="section-label mb-1">Progress</p>
+                            <h4 class="card-heading mb-0">Tasks by subject</h4>
+                        </div>
+
+                        <select class="form-select clean-select stats-filter-select"
+                                data-filter="distribution_period">
+                            <option value="daily" {% if distribution_period == 'daily' %}selected{% endif %}>Daily</option>
+                            <option value="weekly" {% if distribution_period == 'weekly' %}selected{% endif %}>Weekly</option>
+                            <option value="monthly" {% if distribution_period == 'monthly' %}selected{% endif %}>Monthly</option>
+                            <option value="yearly" {% if distribution_period == 'yearly' %}selected{% endif %}>Yearly</option>
+                        </select>
                     </div>
 
-                    <select class="form-select clean-select">
-                        <option>Today</option>
-                        <option>This Week</option>
-                        <option>This Month</option>
-                    </select>
+                    <div class="subject-progress-list">
+                        {% if task_subject_stats %}
+                            {% for subject in task_subject_stats %}
+                                <div class="subject-progress-item">
+                                    <div class="subject-progress-top">
+                                        <div>
+                                            <p class="subject-progress-title mb-1">{{ subject.name }}</p>
+                                            <p class="subject-progress-meta mb-0">
+                                                {{ subject.completed }} completed · {{ subject.pending }} pending
+                                            </p>
+                                        </div>
+                                        <span class="subject-progress-percent">{{ subject.progress }}%</span>
+                                    </div>
+
+                                    <div class="subject-progress-bar-wrap">
+                                        <div class="subject-progress-bar" style="width: {{ subject.progress }}%;"></div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-stat-state">
+                                <p class="mb-0">No task data yet.</p>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
+            </div>
 
-                <div class="record-list">
-                    <div class="record-item">
-                        <div class="record-left">
-                            <div class="record-dot"></div>
-                            <div>
-                                <p class="record-subject mb-1">Frontend Development</p>
-                                <p class="record-time mb-0">09:00 AM - 10:30 AM</p>
-                            </div>
+            <div class="col-12 col-xl-5">
+                <div class="dashboard-card recent-record-card h-100">
+                    <div class="chart-card-head">
+                        <div>
+                            <p class="section-label mb-1">Recent</p>
+                            <h4 class="card-heading mb-0">Recently completed tasks</h4>
                         </div>
-                        <span class="record-duration">1.5h</span>
+
+                        <select class="form-select clean-select stats-filter-select"
+                                data-filter="record_period">
+                            <option value="daily" {% if record_period == 'daily' %}selected{% endif %}>Daily</option>
+                            <option value="weekly" {% if record_period == 'weekly' %}selected{% endif %}>Weekly</option>
+                            <option value="monthly" {% if record_period == 'monthly' %}selected{% endif %}>Monthly</option>
+                            <option value="yearly" {% if record_period == 'yearly' %}selected{% endif %}>Yearly</option>
+                        </select>
                     </div>
 
-                    <div class="record-item">
-                        <div class="record-left">
-                            <div class="record-dot"></div>
-                            <div>
-                                <p class="record-subject mb-1">Database Systems</p>
-                                <p class="record-time mb-0">11:00 AM - 12:00 PM</p>
+                    <div class="record-list">
+                        {% if recent_completed_tasks %}
+                            {% for task in recent_completed_tasks %}
+                                <div class="record-item">
+                                    <div class="record-left">
+                                        <div class="record-dot done-dot"></div>
+                                        <div>
+                                            <p class="record-subject mb-1">{{ task.user_subject.subject.name }}</p>
+                                            <p class="record-time mb-0">{{ task.study_date }}</p>
+                                        </div>
+                                    </div>
+                                    <span class="record-duration">Done</span>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-stat-state">
+                                <p class="mb-0">No completed tasks yet.</p>
                             </div>
-                        </div>
-                        <span class="record-duration">1h</span>
-                    </div>
-
-                    <div class="record-item">
-                        <div class="record-left">
-                            <div class="record-dot"></div>
-                            <div>
-                                <p class="record-subject mb-1">UI/UX Design</p>
-                                <p class="record-time mb-0">02:00 PM - 03:15 PM</p>
-                            </div>
-                        </div>
-                        <span class="record-duration">1.25h</span>
-                    </div>
-
-                    <div class="record-item">
-                        <div class="record-left">
-                            <div class="record-dot"></div>
-                            <div>
-                                <p class="record-subject mb-1">Python Practice</p>
-                                <p class="record-time mb-0">05:00 PM - 06:00 PM</p>
-                            </div>
-                        </div>
-                        <span class="record-duration">1h</span>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    {% endif %}
+
+    {% if active_tab == 'focus' %}
+        <div class="dashboard-card stats-overview-card">
+            <div class="stats-overview-grid">
+                <div class="overview-metric">
+                    <p class="overview-label">Weekly Study Hours</p>
+                    <h2 class="overview-value">{{ weekly_study_hours }}</h2>
+                    <p class="overview-note">Last 7 days</p>
+                </div>
+
+                <div class="overview-divider"></div>
+
+                <div class="overview-metric">
+                    <p class="overview-label">Avg Session</p>
+                    <h2 class="overview-value">{{ avg_session_minutes }}</h2>
+                    <p class="overview-note">Minutes per session</p>
+                </div>
+
+                <div class="overview-divider"></div>
+
+                <div class="overview-metric">
+                    <p class="overview-label">Longest Session</p>
+                    <h2 class="overview-value">{{ longest_session_minutes }}</h2>
+                    <p class="overview-note">Minutes</p>
+                </div>
+
+                <div class="overview-divider"></div>
+
+                <div class="overview-metric">
+                    <p class="overview-label">Studied Days</p>
+                    <h2 class="overview-value">{{ studied_days_count }}</h2>
+                    <p class="overview-note">Days this week</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-1">
+            <div class="col-12 col-xl-8">
+                <div class="dashboard-card chart-clean-card h-100">
+                    <div class="chart-card-head">
+                        <div>
+                            <p class="section-label mb-1">Focus</p>
+                            <h4 class="card-heading mb-0">Weekly focus trend</h4>
+                        </div>
+
+                        <select class="form-select clean-select stats-filter-select"
+                                data-filter="activity_period">
+                            <option value="daily" {% if activity_period == 'daily' %}selected{% endif %}>Daily</option>
+                            <option value="weekly" {% if activity_period == 'weekly' %}selected{% endif %}>Weekly</option>
+                            <option value="monthly" {% if activity_period == 'monthly' %}selected{% endif %}>Monthly</option>
+                            <option value="yearly" {% if activity_period == 'yearly' %}selected{% endif %}>Yearly</option>
+                        </select>
+                    </div>
+
+                    <div class="chart-clean-wrap">
+                        <canvas id="studyActivityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-xl-4">
+                <div class="dashboard-card recent-record-card h-100">
+                    <div class="chart-card-head">
+                        <div>
+                            <p class="section-label mb-1">Subjects</p>
+                            <h4 class="card-heading mb-0">Most studied subjects</h4>
+                        </div>
+
+                        <select class="form-select clean-select stats-filter-select"
+                                data-filter="distribution_period">
+                            <option value="daily" {% if distribution_period == 'daily' %}selected{% endif %}>Daily</option>
+                            <option value="weekly" {% if distribution_period == 'weekly' %}selected{% endif %}>Weekly</option>
+                            <option value="monthly" {% if distribution_period == 'monthly' %}selected{% endif %}>Monthly</option>
+                            <option value="yearly" {% if distribution_period == 'yearly' %}selected{% endif %}>Yearly</option>
+                        </select>
+                    </div>
+
+                    <div class="focus-subject-list">
+                        {% if subject_stats %}
+                            {% for subject in subject_stats|slice:":5" %}
+                                <div class="focus-subject-item">
+                                    <div>
+                                        <p class="subject-progress-title mb-1">{{ subject.name }}</p>
+                                        <p class="subject-progress-meta mb-0">{{ subject.hours }} hours</p>
+                                    </div>
+                                    <span class="subject-progress-percent">{{ subject.progress }}%</span>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-stat-state">
+                                <p class="mb-0">No subject stats yet.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const activityCtx = document.getElementById('studyActivityChart');
-    if (activityCtx) {
-        new Chart(activityCtx, {
+    const lineCanvas = document.getElementById('studyActivityChart');
+    if (lineCanvas) {
+        new Chart(lineCanvas, {
             type: 'line',
             data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                labels: {{ chart_labels|safe }},
                 datasets: [{
                     label: 'Study Hours',
-                    data: [2, 3.5, 2.5, 4, 3, 4.5, 3.5],
+                    data: {{ chart_data|safe }},
                     borderColor: '#4F46E5',
                     backgroundColor: 'rgba(79, 70, 229, 0.12)',
                     fill: true,
@@ -194,15 +416,15 @@
         });
     }
 
-    const splitCtx = document.getElementById('subjectSplitChart');
-    if (splitCtx) {
-        new Chart(splitCtx, {
+    const donutCanvas = document.getElementById('subjectSplitChart');
+    if (donutCanvas) {
+        new Chart(donutCanvas, {
             type: 'doughnut',
             data: {
-                labels: ['Frontend', 'Database', 'UI/UX', 'Python'],
+                labels: {{ subject_chart_labels|safe }},
                 datasets: [{
-                    data: [14, 10, 8, 10.5],
-                    backgroundColor: ['#4F46E5', '#7C74FF', '#A5B4FC', '#C7D2FE'],
+                    data: {{ subject_chart_data|safe }},
+                    backgroundColor: ['#4F46E5', '#7C74FF', '#A5B4FC', '#C7D2FE', '#DDE5FF'],
                     borderWidth: 0
                 }]
             },
@@ -224,11 +446,20 @@
         });
     }
 
-    const statsTabs = document.querySelectorAll('.stats-tab');
-    statsTabs.forEach(tab => {
-        tab.addEventListener('click', function () {
-            statsTabs.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
+    const filterSelects = document.querySelectorAll('.stats-filter-select');
+
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function () {
+            const url = new URL(window.location.href);
+
+            url.searchParams.set('tab', '{{ active_tab }}');
+            url.searchParams.set('activity_period', '{{ activity_period }}');
+            url.searchParams.set('distribution_period', '{{ distribution_period }}');
+            url.searchParams.set('record_period', '{{ record_period }}');
+
+            url.searchParams.set(this.dataset.filter, this.value);
+
+            window.location.href = url.toString();
         });
     });
 </script>
