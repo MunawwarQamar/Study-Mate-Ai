@@ -39,43 +39,47 @@
 </div>
 
 {% if latest_plan %}
+
 <h4 class="fw-bold mb-3">Your Current Plan
     <small class="text-muted fs-6">— Week of {{ latest_plan.week_start }}</small>
 </h4>
 
-<div class="table-responsive">
-    <table class="table table-bordered table-hover align-middle">
-        <thead class="table-primary">
-            <tr>
-                <th>📅 Date</th>
-                <th>📚 Subject</th>
-                <th>⏱ Planned Hours</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in latest_plan.plan_items.all %}
-            <tr>
-                <td>{{ item.study_date }}</td>
-                <td>{{ item.user_subject.subject.name }}</td>
-                <td>{{ item.planned_hours }} hrs</td>
-                <td>
-                    {% if item.status == 'completed' %}
-                        <span class="badge bg-success">Completed</span>
-                    {% else %}
-                        <span class="badge bg-warning text-dark">Pending</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<div id="studyPlanCalendar"></div>
+
+<script>
+const studyPlanEvents = [
+    {% for item in latest_plan.plan_items.all %}
+    {
+        title: "{{ item.user_subject.subject.name|escapejs }} - {{ item.planned_hours }}h",
+        start: "{{ item.study_date|escapejs }}",
+        color: "{% if item.status == 'completed' %}green{% else %}orange{% endif %}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+</script>
 
 {% else %}
+
 <div class="text-center mt-4">
     <h5 class="text-muted">No study plan yet. Generate your first plan above! 🚀</h5>
 </div>
+
 {% endif %}
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const calendarEl = document.getElementById('studyPlanCalendar');
+    if (!calendarEl) return;
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: 650,
+        events: typeof studyPlanEvents !== 'undefined' ? studyPlanEvents : [],
+    });
+    calendar.render();
+});
+</script>
 
 {% endblock %}
