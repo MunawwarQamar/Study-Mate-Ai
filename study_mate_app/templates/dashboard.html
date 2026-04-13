@@ -1,0 +1,447 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard | StudyMate AI{% endblock %}
+
+{% block content %}
+<div class="dashboard-page container-fluid py-4 px-3 px-md-4">
+
+    <div class="dashboard-card progress-card mb-4">
+        <p class="section-label mb-2">Progress Overview</p>
+        <h2 class="progress-title mb-2">
+            <span id="weeklyProgressPercent">{{ weekly_progress_percent }}</span>% completed this week
+        </h2>
+        <p class="progress-subtitle mb-4">
+            You completed
+            <span id="completedTasksCount">{{ completed_tasks_count }}</span>
+            out of
+            <span id="weeklyTasksCount">{{ weekly_tasks_count }}</span>
+            tasks this week.
+        </p>
+
+        <div class="custom-progress">
+            <div
+                id="weeklyProgressBar"
+                class="custom-progress-bar"
+                style="width: {{ weekly_progress_percent }}%;"
+            ></div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-md-4">
+            <div class="dashboard-card stat-card h-100">
+                <p class="stat-label">Tasks Today</p>
+                <h3 class="stat-number">{{ todays_tasks_count }}</h3>
+                <p class="stat-subtext mb-0">Planned for today</p>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="dashboard-card stat-card h-100">
+                <p class="stat-label">Study Hours</p>
+                <h3 class="stat-number">{{ total_study_hours }}</h3>
+                <p class="stat-subtext mb-0">This week</p>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="dashboard-card stat-card h-100">
+                <p class="stat-label">Subjects</p>
+                <h3 class="stat-number">{{ user_subjects|length }}</h3>
+                <p class="stat-subtext mb-0">Active subjects</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-xl-6">
+            <div class="dashboard-card bottom-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="bottom-title mb-0">Today’s Tasks</h4>
+                    <a href="{% url 'all_tasks' %}" class="view-all-link">View all</a>
+                </div>
+
+                {% if todays_tasks %}
+                    <div class="task-list d-flex flex-column gap-3">
+                        {% for task in todays_tasks %}
+                            <button
+                                type="button"
+                                class="task-item-btn d-flex align-items-center gap-3"
+                                data-task-id="{{ task.id }}"
+                                onclick="toggleTaskAjax(this)"
+                            >
+                                <span class="task-check {% if task.status == 'completed' %}checked{% endif %}">
+                                    {% if task.status == 'completed' %}
+                                        <i class="bi bi-check-lg"></i>
+                                    {% endif %}
+                                </span>
+
+                                <span class="flex-grow-1 text-start">
+                                    <span class="task-name {% if task.status == 'completed' %}completed{% endif %}">
+                                        {{ task.user_subject.subject.name }}
+                                    </span>
+                                    <span class="task-meta d-block">{{ task.planned_hours }} hr planned</span>
+                                </span>
+                            </button>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <h5 class="empty-title">Stay on track today</h5>
+                        <p class="empty-text mb-2">No tasks for today</p>
+                        <p class="empty-text-muted">
+                            You are all caught up. Generate a new plan or review your upcoming exams.
+                        </p>
+                        <a href="{% url 'study_plan' %}" class="btn generate-btn mt-2">Generate Plan</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-6">
+            <div class="dashboard-card bottom-card h-100">
+                <h4 class="bottom-title mb-4">Continue Studying</h4>
+
+                {% if continue_subject %}
+                    <a href="{% url 'all_subjects' %}" class="continue-box-link text-decoration-none">
+                        <div class="continue-box">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                                <h5 class="continue-subject mb-0">
+                                    {{ continue_subject.subject.name }}
+                                </h5>
+                                <span class="continue-time">Last studied {{ continue_last_studied_text }}</span>
+                            </div>
+
+                            <div class="continue-progress mb-2">
+                                <div class="continue-progress-bar" style="width: {{ continue_percent }}%;"></div>
+                            </div>
+
+                            <p class="continue-meta mb-0">
+                                {{ continue_percent }}% complete · {{ continue_total_minutes }} min studied
+                            </p>
+                        </div>
+                    </a>
+                {% else %}
+                    <div class="empty-state">
+                        <h5 class="empty-title">Pick up where you left off</h5>
+                        <p class="empty-text mb-2">No recent study session</p>
+                        <p class="empty-text-muted">
+                            Start studying one of your subjects and it will appear here.
+                        </p>
+                        <a href="{% url 'all_subjects' %}" class="btn generate-btn mt-2">View Subjects</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .dashboard-page {
+        background: #f8f9fc;
+        min-height: 100%;
+    }
+
+    .dashboard-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 22px;
+        padding: 24px;
+    }
+
+    .progress-card {
+        min-height: 190px;
+    }
+
+    .section-label {
+        font-size: 0.95rem;
+        color: #0f172a;
+        font-weight: 600;
+    }
+
+    .progress-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #020617;
+        line-height: 1.2;
+    }
+
+    .progress-subtitle {
+        font-size: 1rem;
+        color: #475569;
+    }
+
+    .custom-progress {
+        width: 100%;
+        height: 14px;
+        background: #d9dbe1;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .custom-progress-bar {
+        height: 100%;
+        background: #030224;
+        border-radius: 999px;
+        transition: width 0.2s ease;
+    }
+
+    .stat-card {
+        min-height: 170px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .stat-label {
+        font-size: 0.95rem;
+        color: #6b7280;
+        margin-bottom: 0;
+    }
+
+    .stat-number {
+        font-size: 2.6rem;
+        font-weight: 700;
+        color: #020617;
+        margin: 12px 0;
+        line-height: 1;
+    }
+
+    .stat-subtext {
+        font-size: 0.95rem;
+        color: #9ca3af;
+    }
+
+    .bottom-card {
+        min-height: 340px;
+    }
+
+    .bottom-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #020617;
+    }
+
+    .view-all-link {
+        font-size: 0.95rem;
+        color: #6b7280;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .task-item-btn {
+        width: 100%;
+        border: none;
+        background: transparent;
+        padding: 8px 0;
+        cursor: pointer;
+    }
+
+    .task-item-btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+
+    .task-check {
+        width: 24px;
+        height: 24px;
+        border: 1.5px solid #d1d5db;
+        border-radius: 7px;
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        background: #ffffff;
+    }
+
+    .task-check.checked {
+        background: #030224;
+        border-color: #030224;
+    }
+
+    .task-name {
+        font-size: 1rem;
+        color: #111827;
+        font-weight: 500;
+    }
+
+    .task-name.completed {
+        text-decoration: line-through;
+        color: #9ca3af;
+    }
+
+    .task-meta {
+        font-size: 0.9rem;
+        color: #9ca3af;
+        margin-top: 2px;
+    }
+
+    .continue-box-link {
+        display: block;
+        color: inherit;
+    }
+
+    .continue-box {
+        background: #fafafa;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 22px;
+        transition: 0.2s ease;
+    }
+
+    .continue-box:hover {
+        border-color: #d1d5db;
+        transform: translateY(-1px);
+    }
+
+    .continue-subject {
+        font-size: 1.45rem;
+        font-weight: 700;
+        color: #020617;
+    }
+
+    .continue-time {
+        font-size: 0.95rem;
+        color: #a16207;
+    }
+
+    .continue-progress {
+        width: 100%;
+        height: 12px;
+        background: #cfcfd5;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .continue-progress-bar {
+        height: 100%;
+        background: #030224;
+        border-radius: 999px;
+    }
+
+    .continue-meta {
+        font-size: 0.95rem;
+        color: #6b7280;
+    }
+
+    .empty-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #020617;
+        margin-bottom: 14px;
+    }
+
+    .empty-text {
+        font-size: 1rem;
+        color: #111827;
+    }
+
+    .empty-text-muted {
+        font-size: 0.98rem;
+        color: #4b5563;
+        line-height: 1.7;
+        max-width: 480px;
+    }
+
+    .generate-btn {
+        background: #2563eb;
+        color: #ffffff;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 18px;
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+
+    .generate-btn:hover {
+        background: #1d4ed8;
+        color: #ffffff;
+    }
+
+    @media (max-width: 767.98px) {
+        .dashboard-card {
+            padding: 18px;
+            border-radius: 18px;
+        }
+
+        .progress-title {
+            font-size: 1.75rem;
+        }
+
+        .stat-number {
+            font-size: 2.2rem;
+        }
+
+        .bottom-title {
+            font-size: 1.35rem;
+        }
+
+        .continue-subject {
+            font-size: 1.2rem;
+        }
+
+        .empty-title {
+            font-size: 1.45rem;
+        }
+    }
+</style>
+
+<script>
+    function getCSRFToken() {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith('csrftoken=')) {
+                return cookie.substring('csrftoken='.length);
+            }
+        }
+        return '';
+    }
+
+    function toggleTaskAjax(button) {
+        const taskId = button.dataset.taskId;
+        const check = button.querySelector('.task-check');
+        const name = button.querySelector('.task-name');
+
+        button.disabled = true;
+
+        fetch(`/tasks/toggle-ajax/${taskId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                alert(data.message || 'Something went wrong.');
+                return;
+            }
+
+            if (data.status === 'completed') {
+                check.classList.add('checked');
+                name.classList.add('completed');
+                check.innerHTML = '<i class="bi bi-check-lg"></i>';
+            } else {
+                check.classList.remove('checked');
+                name.classList.remove('completed');
+                check.innerHTML = '';
+            }
+
+            document.getElementById('weeklyProgressPercent').textContent = data.weekly_progress_percent;
+            document.getElementById('completedTasksCount').textContent = data.completed_tasks_count;
+            document.getElementById('weeklyTasksCount').textContent = data.weekly_tasks_count;
+            document.getElementById('weeklyProgressBar').style.width = `${data.weekly_progress_percent}%`;
+        })
+        .catch(() => {
+            alert('Something went wrong while updating the task.');
+        })
+        .finally(() => {
+            button.disabled = false;
+        });
+    }
+</script>
+{% endblock %}

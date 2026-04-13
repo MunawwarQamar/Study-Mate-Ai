@@ -5,8 +5,215 @@ from openai import OpenAI
 import json
 from datetime import date, timedelta
 from django.contrib import messages
+from django.views.decorators.http import require_POST
+from django.db.models import Sum
+from django.utils import timezone
 
 
+def dashboard(request):
+    if not request.session.get('user_id'):
+        return redirect('auth')
+
+    user = User.objects.get(id=request.session['user_id'])
+    today = timezone.localdate()
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+
+    user_subjects = UserSubject.objects.filter(user=user).select_related('subject')
+
+    todays_tasks = StudyPlanItem.objects.filter(
+        user_subject__user=user,
+        study_date=today
+    ).select_related('user_subject__subject').order_by('status', 'study_date', 'id')
+
+    weekly_tasks = StudyPlanItem.objects.filter(
+        user_subject__user=user,
+        study_date__range=[week_start, week_end]
+    )
+
+    completed_tasks_count = weekly_tasks.filter(status='completed').count()
+    weekly_tasks_count = weekly_tasks.count()
+    weekly_progress_percent = int((completed_tasks_count / weekly_tasks_count) * 100) if weekly_tasks_count else 0
+
+    total_study_minutes = 0
+    weekly_sessions = StudySession.objects.filter(
+        user_subject__user=user,
+        date__range=[week_start, week_end]
+    )
+    for session in weekly_sessions:
+        total_study_minutes += session.duration_minutes
+
+    total_study_hours = round(total_study_minutes / 60, 1)
+
+    latest_session = StudySession.objects.filter(
+        user_subject__user=user
+    ).select_related('user_subject__subject').order_by('-date', '-created_at').first()
+
+    continue_subject = None
+    continue_percent = 0
+    continue_last_studied_text = ''
+    continue_total_minutes = 0
+
+    if latest_session:
+        continue_subject = latest_session.user_subject
+
+        subject_tasks = StudyPlanItem.objects.filter(user_subject=continue_subject)
+        subject_completed_tasks = subject_tasks.filter(status='completed').count()
+        subject_total_tasks = subject_tasks.count()
+        continue_percent = int((subject_completed_tasks / subject_total_tasks) * 100) if subject_total_tasks else 0
+
+        continue_total_minutes = 0
+        all_subject_sessions = StudySession.objects.filter(user_subject=continue_subject)
+        for session in all_subject_sessions:
+            continue_total_minutes += session.duration_minutes
+
+        days_diff = (today - latest_session.date).days
+        if days_diff == 0:
+            continue_last_studied_text = 'Today'
+        elif days_diff == 1:
+            continue_last_studied_text = '1 day ago'
+        else:
+            continue_last_studied_text = f'{days_diff} days ago'
+
+    context = {
+        'user': user,
+        'weekly_progress_percent': weekly_progress_percent,
+        'completed_tasks_count': completed_tasks_count,
+        'weekly_tasks_count': weekly_tasks_count,
+        'todays_tasks_count': todays_tasks.count(),
+        'total_study_hours': total_study_hours,
+        'current_streak': user.current_streak,
+        'xp_points': user.xp_points,
+        'todays_tasks': todays_tasks,
+        'user_subjects': user_subjects,
+        'continue_subject': continue_subject,
+        'continue_percent': continue_percent,
+        'continue_last_studied_text': continue_last_studied_text,
+        'continue_total_minutes': continue_total_minutes,
+    }
+
+    return render(request, 'dashboard.html', context)
+
+@require_POST
+def toggle_task_ajax(request, id):
+    if not request.session.get('user_id'):
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
+
+    try:
+        user = User.objects.get(id=request.session['user_id'])
+
+        task = StudyPlanItem.objects.select_related('user_subject__user').get(
+            id=id,
+            user_subject__user=user
+        )
+
+        if task.status == 'pending':
+            task.status = 'completed'
+        else:
+            task.status = 'pending'
+        task.save()
+
+        today = timezone.localdate()
+        week_start = today - timedelta(days=today.weekday())
+        week_end = week_start + timedelta(days=6)
+
+        weekly_tasks = StudyPlanItem.objects.filter(
+            user_subject__user=user,
+            study_date__range=[week_start, week_end]
+        )
+        completed_tasks_count = weekly_tasks.filter(status='completed').count()
+        weekly_tasks_count = weekly_tasks.count()
+        weekly_progress_percent = int((completed_tasks_count / weekly_tasks_count) * 100) if weekly_tasks_count else 0
+
+        return JsonResponse({
+            'success': True,
+            'task_id': task.id,
+            'status': task.status,
+            'weekly_progress_percent': weekly_progress_percent,
+            'completed_tasks_count': completed_tasks_count,
+            'weekly_tasks_count': weekly_tasks_count,
+        })
+
+    except StudyPlanItem.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Task not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+    
+
+@require_POST
+def add_study_session_ajax(request):
+    if not request.session.get('user_id'):
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
+
+    try:
+        user = User.objects.get(id=request.session['user_id'])
+        user_subject_id = request.POST.get('user_subject_id')
+        duration_minutes = request.POST.get('duration_minutes')
+        notes = request.POST.get('notes', '').strip()
+        session_date = request.POST.get('session_date')
+
+        if not user_subject_id or not duration_minutes or not session_date:
+            return JsonResponse({
+                'success': False,
+                'message': 'All required fields must be filled.'
+            }, status=400)
+
+        user_subject = UserSubject.objects.get(id=user_subject_id, user=user)
+
+        session = StudySession.objects.create(
+            user_subject=user_subject,
+            duration_minutes=int(duration_minutes),
+            notes=notes,
+            date=session_date
+        )
+
+        User.objects.add_xp_and_streak(user)
+
+        today = timezone.localdate()
+        week_start = today - timedelta(days=today.weekday())
+        week_end = week_start + timedelta(days=6)
+
+        weekly_sessions = StudySession.objects.filter(
+            user_subject__user=user,
+            date__range=[week_start, week_end]
+        )
+
+        total_minutes = sum(item.duration_minutes for item in weekly_sessions)
+        total_study_hours = round(total_minutes / 60, 1)
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Study session added successfully.',
+            'session': {
+                'subject': user_subject.subject.name,
+                'duration_minutes': session.duration_minutes,
+                'date': str(session.date),
+                'notes': session.notes,
+            },
+            'stats': {
+                'xp_points': user.xp_points,
+                'current_streak': user.current_streak,
+                'total_study_hours': total_study_hours,
+            }
+        })
+
+    except UserSubject.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Subject not found.'
+        }, status=404)
+    except ValueError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Duration must be a valid number.'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
+    
+    
 def statistics(request):
     context = {
         'user': {
@@ -42,7 +249,7 @@ def home(request):
 
 def auth_page(request):
     if request.session.get('user_id'):
-        return redirect('profile_dashboard')
+        return redirect('dashboard')
     
     return render(request, 'auth.html')
 
@@ -58,7 +265,7 @@ def register(request):
         user = User.objects.create_user(request.POST)
 
         request.session['user_id'] = user.id
-        return redirect('profile_dashboard')
+        return redirect('dashboard')
 
     return redirect('auth')
 
@@ -78,7 +285,7 @@ def login(request):
             return redirect('auth')
 
         request.session['user_id'] = user.id
-        return redirect('profile_dashboard')
+        return redirect('dashboard')
 
     return redirect('auth')
 
