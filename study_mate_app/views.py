@@ -78,7 +78,7 @@ def login(request):
             return redirect('auth')
 
         request.session['user_id'] = user.id
-        return redirect('profile_page')
+        return redirect('profile_dashboard')
 
     return redirect('auth')
 
@@ -301,9 +301,17 @@ def toggle_task(request, id):
         task = StudyPlanItem.objects.get(id=id)
         if task.status == 'pending':
             task.status = 'completed'
+            task.save()
+            duration_minutes = int(float(task.planned_hours) * 60)
+            StudySession.objects.log_session(
+                user_subject=task.user_subject,
+                duration_minutes=duration_minutes,
+                notes=f"Completed planned study: {task.user_subject.subject.name}",
+                session_date=task.study_date
+            )
         else:
             task.status = 'pending'
-        task.save()
+            task.save()
         return JsonResponse({'status': task.status})
 
 def profile_page(request):
@@ -314,8 +322,8 @@ def profile_page(request):
 
     sessions = StudySession.objects.filter(user_subject__user=user)
     total_minutes = 0
-    for s in sessions:
-        total_minutes += s.duration_minutes
+    for session in sessions:
+        total_minutes += session.duration_minutes
     total_hours = round(total_minutes / 60, 2)
 
     xp_data = user.get_xp_progress()
