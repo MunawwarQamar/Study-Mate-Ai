@@ -102,6 +102,15 @@ class UserManager(models.Manager):
 
 class StudySessionManager(models.Manager):
     def log_session(self, user_subject, duration_minutes, notes, session_date, study_plan_item=None):
+        if study_plan_item:
+            existing = self.filter(study_plan_item=study_plan_item).first()
+            if existing:
+                existing.duration_minutes = duration_minutes
+                existing.notes = notes
+                existing.date = session_date
+                existing.save()
+                return existing
+            
         session = self.create(user_subject=user_subject, duration_minutes=duration_minutes, notes=notes , date=session_date, study_plan_item=study_plan_item)
         xp = max(1, duration_minutes // 10)
         user_subject.user.add_xp_and_streak(xp)
@@ -110,19 +119,25 @@ class StudySessionManager(models.Manager):
     
     def remove_session(self, study_plan_item):
         sessions = self.filter(study_plan_item=study_plan_item)
-        total_xp_to_remove = 0
         
-        for session in sessions:
-            total_xp_to_remove += max(1, session.duration_minutes // 10)
+        if not sessions.exists():
+            return 0  # No sessions to remove
         
-        if sessions.exists():
-            user = study_plan_item.user_subject.user
+        total_xp_to_remove = sum(
+            max(1, session.duration_minutes // 10) 
+            for session in sessions
+        )
+        
+        user = study_plan_item.user_subject.user
+        
+        deleted_count, _ = sessions.delete()
+        
+        if deleted_count > 0:
             user.xp_points = max(0, user.xp_points - total_xp_to_remove)
             user.save()
-            sessions.delete()
         
         return total_xp_to_remove
-    
+        
     def weekly_data(self, user):
         today = date.today()
         start = today - timedelta(days=6)

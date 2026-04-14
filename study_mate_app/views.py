@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
+from django.db import transaction
 from .models import Subject, UserSubject, User, StudyPlan, StudyPlanItem, StudySession, UserBadge
 from openai import OpenAI
 import json
@@ -298,23 +299,30 @@ def all_tasks(request):
 
 def toggle_task(request, id):
     if request.method == 'POST':
-        task = StudyPlanItem.objects.get(id=id)
-        if task.status == 'pending':
-            task.status = 'completed'
-            task.save()
-            duration_minutes = int(float(task.planned_hours) * 60)
-            StudySession.objects.log_session(
-                user_subject=task.user_subject,
-                duration_minutes=duration_minutes,
-                notes=f"Completed planned study: {task.user_subject.subject.name}",
-                session_date=task.study_date,
-                study_plan_item=task
-            )
-        else:
-            task.status = 'pending'
-            task.save()
-            task.task_sessions.all().delete()
-        return JsonResponse({'status': task.status})
+        with transaction.atomic():  
+            task = StudyPlanItem.objects.get(id=id)
+            
+            if task.status == 'pending':
+                task.status = 'completed'
+                task.save()
+                
+                duration_minutes = int(float(task.planned_hours) * 60)
+                StudySession.objects.log_session(
+                    user_subject=task.user_subject,
+                    duration_minutes=duration_minutes,
+                    notes=f"Completed: {task.user_subject.subject.name}",
+                    session_date=task.study_date,
+                    study_plan_item=task
+                )
+                
+            else:
+                task.status = 'pending'
+                task.save()
+                StudySession.objects.remove_session(task)
+            
+            return JsonResponse({'status': task.status})
+    
+    return JsonResponse({'error': 'Invalid method'}, status=405)
 
 def profile_page(request):
     if not request.session.get('user_id'):
