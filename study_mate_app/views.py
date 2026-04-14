@@ -307,11 +307,13 @@ def toggle_task(request, id):
                 user_subject=task.user_subject,
                 duration_minutes=duration_minutes,
                 notes=f"Completed planned study: {task.user_subject.subject.name}",
-                session_date=task.study_date
+                session_date=task.study_date,
+                study_plan_item=task
             )
         else:
             task.status = 'pending'
             task.save()
+            task.task_sessions.all().delete()
         return JsonResponse({'status': task.status})
 
 def profile_page(request):
@@ -330,6 +332,7 @@ def profile_page(request):
     earned_badges = UserBadge.objects.filter(user=user).select_related('badge')
     next_badge = user.get_next_badge()
     weekly_data = StudySession.objects.weekly_data(user)
+    reversed_weekly_data = dict(reversed(list(weekly_data.items())))
 
     context = {
         'user': user,
@@ -337,7 +340,7 @@ def profile_page(request):
         'xp_data': xp_data,
         'earned_badges': earned_badges,
         'next_badge': next_badge,
-        'weekly_data': weekly_data
+        'weekly_data': reversed_weekly_data
     }
 
     return render(request, 'profile_page.html' , context=context)

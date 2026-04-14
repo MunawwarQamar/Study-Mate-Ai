@@ -101,12 +101,27 @@ class UserManager(models.Manager):
         return User.objects.filter(email=email).first()
 
 class StudySessionManager(models.Manager):
-    def log_session(self, user_subject, duration_minutes, notes, session_date):
-        session = self.create(user_subject=user_subject, duration_minutes=duration_minutes, notes=notes , date=session_date)
+    def log_session(self, user_subject, duration_minutes, notes, session_date, study_plan_item=None):
+        session = self.create(user_subject=user_subject, duration_minutes=duration_minutes, notes=notes , date=session_date, study_plan_item=study_plan_item)
         xp = max(1, duration_minutes // 10)
         user_subject.user.add_xp_and_streak(xp)
 
         return session
+    
+    def remove_session(self, study_plan_item):
+        sessions = self.filter(study_plan_item=study_plan_item)
+        total_xp_to_remove = 0
+        
+        for session in sessions:
+            total_xp_to_remove += max(1, session.duration_minutes // 10)
+        
+        if sessions.exists():
+            user = study_plan_item.user_subject.user
+            user.xp_points = max(0, user.xp_points - total_xp_to_remove)
+            user.save()
+            sessions.delete()
+        
+        return total_xp_to_remove
     
     def weekly_data(self, user):
         today = date.today()
@@ -180,14 +195,22 @@ class User(models.Model):
                     )
 
     def get_xp_progress(self):
-        level = self.xp_points // 100
-        current_xp = self.xp_points % 100
-
+        level = 0
+        xp_needed_for_this_level = 100 
+        remaining_xp = self.xp_points
+        
+        while remaining_xp >= xp_needed_for_this_level:
+            remaining_xp = remaining_xp - xp_needed_for_this_level
+            level = level + 1
+            xp_needed_for_this_level = xp_needed_for_this_level + 100  
+        
+        next_level_xp = xp_needed_for_this_level
+        
         return {
             'level': level,
-            'current_xp': current_xp,
-            'next_level_xp': 100,
-            'progress_percent': int((current_xp / 100) * 100)
+            'current_xp': remaining_xp,
+            'next_level_xp': next_level_xp,
+            'progress_percent': int((remaining_xp / next_level_xp) * 100)
         }
 
     def get_next_badge(self):
@@ -289,6 +312,7 @@ class StudyPlanItem(models.Model):
 
 class StudySession(models.Model):
     user_subject = models.ForeignKey(UserSubject, on_delete=models.CASCADE, related_name='sessions')
+    study_plan_item = models.ForeignKey('StudyPlanItem', on_delete=models.CASCADE, null=True, blank=True, related_name='task_sessions')
 
     duration_minutes = models.IntegerField()
     notes = models.TextField(blank=True)
