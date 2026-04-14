@@ -612,6 +612,7 @@ def generate_plan(request):
                     f"- {us.subject.name} (Exam: {us.exam_date}, Priority: {us.priority})"
                 )
             subjects_text = "\n".join(subjects_info)
+
             blocked_text = ", ".join(blocked_days) if blocked_days else "None"
             today = date.today()
 
@@ -621,6 +622,7 @@ def generate_plan(request):
                 if current.strftime('%A') in blocked_days:
                     blocked_dates.append(str(current))
                 current += timedelta(days=1)
+
             blocked_dates_text = ", ".join(blocked_dates) if blocked_dates else "None"
 
             prompt = f"""
@@ -630,19 +632,18 @@ Student's subjects:
 Available study hours per day: {available_hours} hours
 Blocked days (no studying): {blocked_text}
 Blocked dates (do NOT put any session on these dates): {blocked_dates_text}
-IMPORTANT: ALL days of the week are valid study days (including Sunday and Saturday) UNLESS they appear in the blocked dates above. Do NOT skip any day unless it is explicitly in the blocked dates list.
-Return ONLY a JSON array, no extra text:
+IMPORTANT: ALL days are valid unless blocked.
+
+Return ONLY a JSON array:
 [
-  {{"date": "YYYY-MM-DD", "subject": "Subject Name", "hours": 2}},
-  {{"date": "YYYY-MM-DD", "subject": "Subject Name", "hours": 1.5}}
+  {{"date": "YYYY-MM-DD", "subject": "Subject Name", "hours": 2}}
 ]
+
 Rules:
-- Skip blocked days completely
+- Skip blocked days
 - Prioritize high priority subjects
-- Split hours across subjects on the same day if needed
-- Don't exceed available hours per day
-- Focus on subjects with closer exam dates
-- Do not schedule a subject after its exam date
+- Don't exceed daily hours
+- No study after exam date
 """
 
             response = httpx.post(
@@ -654,7 +655,7 @@ Rules:
                 json={
                     "model": "llama-3.3-70b-versatile",
                     "messages": [
-                        {"role": "system", "content": "You ONLY return valid JSON array, no markdown, no extra text."},
+                        {"role": "system", "content": "Return ONLY valid JSON."},
                         {"role": "user", "content": prompt}
                     ],
                     "max_tokens": 1000,
@@ -662,17 +663,31 @@ Rules:
                 },
                 timeout=30
             )
-            
 
-            response_text = response.json()['choices'][0]['message']['content'].strip()
+            # ✅ Handle response safely
+            data = response.json()
+
+            if "choices" not in data:
+                print("API ERROR:", data)
+                return redirect('study_plan')
+
+            response_text = data['choices'][0]['message']['content'].strip()
+
+            # Clean markdown if exists
             response_text = response_text.replace("```json", "").replace("```", "").strip()
 
+            print("FINAL TEXT:", response_text)
+
+            # Parse JSON
             try:
                 plan_data = json.loads(response_text)
             except json.JSONDecodeError:
                 print("Invalid JSON from AI:", response_text)
                 return redirect('study_plan')
+
+            # Save to DB
             StudyPlan.objects.filter(user=user).delete()
+
             study_plan = StudyPlan.objects.create(
                 user=user,
                 week_start=today,
@@ -683,8 +698,11 @@ Rules:
                 subject_name = item.get('subject')
                 study_date = item.get('date')
                 hours = item.get('hours')
+
                 us = user_subjects.filter(subject__name=subject_name).first()
-                if us and study_date and hours:
+
+                # ✅ Skip invalid or 0-hour tasks
+                if us and study_date and hours and hours > 0:
                     StudyPlanItem.objects.create(
                         study_plan=study_plan,
                         user_subject=us,
@@ -700,125 +718,6 @@ Rules:
             return redirect('study_plan')
 
     return redirect('study_plan')
-
-
-# def generate_plan(request):
-#     if request.method == 'POST':
-#         user = User.objects.get(id=request.session['user_id'])
-#         available_hours = request.POST['available_hours']
-#         blocked_days = request.POST.getlist('blocked_days')
-#         user_subjects = UserSubject.objects.filter(user=user).select_related('subject')
-
-#         # Mock AI plan
-#         plan_data = []
-#         current_date = date.today()
-#         subjects_list = list(user_subjects)
-#         days_added = 0
-
-#         while days_added < 7:
-#             day_name = current_date.strftime('%A')
-#             if day_name not in blocked_days:
-#                 for us in subjects_list:
-#                     plan_data.append({
-#                         "date": str(current_date),
-#                         "subject": us.subject.name,
-#                         "hours": round(float(available_hours) / len(subjects_list), 1)
-#                     })
-#                 days_added += 1
-#             current_date += timedelta(days=1)
-
-#         # Save the plan
-#         study_plan = StudyPlan.objects.create(
-#             user=user,
-#             week_start=date.today(),
-#             generated_by_ai="mock"
-#         )
-
-#         # Save each item
-#         for item in plan_data:
-#             subject_name = item['subject']
-#             us = user_subjects.filter(subject__name=subject_name).first()
-#             if us:
-#                 StudyPlanItem.objects.create(
-#                     study_plan=study_plan,
-#                     user_subject=us,
-#                     study_date=item['date'],
-#                     planned_hours=item['hours'],
-#                     status='pending'
-#                 )
-
-#         return redirect('study_plan')
-#     return redirect('study_plan')
-
-#Todo:replace with real Ai when credits are avaliable
-
-# def generate_plan(request):
-#     if request.method == 'POST':
-#         user = User.objects.get(id=request.session['user_id'])
-#         available_hours = request.POST['available_hours']
-#         blocked_days = request.POST.getlist('blocked_days')
-#         user_subjects = UserSubject.objects.filter(user=user).select_related('subject')
-
-#         # Build subjects info for the AI
-#         subjects_info = []
-#         for us in user_subjects:
-#             subjects_info.append(
-#                 f"- {us.subject.name} (Exam: {us.exam_date}, Priority: {us.priority})"
-#             )
-#         subjects_text = "\n".join(subjects_info)
-#         blocked_text = ", ".join(blocked_days) if blocked_days else "None"
-#         today = date.today()
-
-#         prompt = f"""
-# You are a smart study planner. Generate a 7-day study plan starting from {today}.
-
-# Student's subjects:
-# {subjects_text}
-
-# Available study hours per day: {available_hours} hours
-# Blocked days (no studying): {blocked_text}
-
-# Return ONLY a JSON array, no extra text, like this:
-# [
-#   {{"date": "YYYY-MM-DD", "subject": "Subject Name", "hours": 2}},
-#   {{"date": "YYYY-MM-DD", "subject": "Subject Name", "hours": 1.5}}
-# ]
-
-# Rules:
-# - Skip blocked days completely
-# - Prioritize high priority subjects
-# - Split hours across subjects on the same day if needed
-# - Don't exceed available hours per day
-# - Focus on subjects with closer exam dates
-# """
-
-#         client = OpenAI(
-#             api_key="",
-#             base_url=""
-#         )
-#         response = client.chat.completions.create(
-#              model="grok-4-latest",
-#              messages=[{"role": "user", "content": prompt}]
-#         )
-#         response_text = response.choices[0].message.content.strip()
-#         plan_data = json.loads(response_text)
-
-#         # Save each item
-#         for item in plan_data:
-#             subject_name = item['subject']
-#             us = user_subjects.filter(subject__name=subject_name).first()
-#             if us:
-#                 StudyPlanItem.objects.create(
-#                     study_plan=study_plan,
-#                     user_subject=us,
-#                     study_date=item['date'],
-#                     planned_hours=item['hours'],
-#                     status='pending'
-#                 )
-
-#         return redirect('study_plan')
-#     return redirect('study_plan')
-
 
 # ─── TASKS ───
 
