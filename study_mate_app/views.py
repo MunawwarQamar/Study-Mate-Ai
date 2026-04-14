@@ -662,6 +662,7 @@ Rules:
                 },
                 timeout=30
             )
+            
 
             response_text = response.json()['choices'][0]['message']['content'].strip()
             response_text = response_text.replace("```json", "").replace("```", "").strip()
