@@ -4,41 +4,71 @@
 {% block page_subtitle %}Manage your subjects and exam dates{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-end mb-4">
-    <a href="/subjects/add/" class="btn btn-primary">+ Add Subject</a>
+<div class="d-flex justify-content-between align-items-end mb-5">
+    <div>
+        <!-- <span class="badge rounded-pill px-3 py-2 text-primary-emphasis bg-primary-subtle border border-primary-subtle mb-2">Academic Tracker</span> -->
+    </div>
+    <a href="/subjects/add/" class="btn shadow-sm px-4 py-2 rounded-4 fw-bold text-white border-0" 
+       style="background: linear-gradient(135deg, #66E0FF 0%, #a29bfe 100%);">
+       + New Subject
+    </a>
 </div>
 
 {% if user_subjects %}
-<div class="row">
+<div class="row g-4">
     {% for us in user_subjects %}
-    <div class="col-md-4 mb-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h5 class="card-title fw-bold">{{ us.subject.name }}</h5>
-                <p class="mb-1">📅 Exam Date: <strong>{{ us.exam_date }}</strong></p>
-                <p class="mb-3">
-                    Priority:
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden" style="background: #ffffff;">
+            <div style="height: 4px; background: #66E0FF; width: 100%; opacity: 0.6;"></div>
+            
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between mb-3">
                     {% if us.priority == 'high' %}
-                        <span class="badge bg-danger">High</span>
+                        <span class="small fw-bold text-uppercase tracking-wider text-danger" style="font-size: 0.7rem; letter-spacing: 1px;">High Priority</span>
                     {% elif us.priority == 'medium' %}
-                        <span class="badge bg-warning text-dark">Medium</span>
+                        <span class="small fw-bold text-uppercase tracking-wider text-warning" style="font-size: 0.7rem; letter-spacing: 1px;">Medium Priority</span>
                     {% else %}
-                        <span class="badge bg-success">Low</span>
+                        <span class="small fw-bold text-uppercase tracking-wider text-info" style="font-size: 0.7rem; letter-spacing: 1px;">Low Priority</span>
                     {% endif %}
-                </p>
+                </div>
+
+                <h4 class="card-title fw-bold text-dark-emphasis mb-4">{{ us.subject.name }}</h4>
+
+                <div class="p-3 rounded-4 mb-4" style="background-color: #f8faff; border: 1px solid #edf2f7;">
+                    <div class="d-flex align-items-center">
+                        <span class="me-3" style="font-size: 1.2rem;">📅</span>
+                        <div>
+                            <div class="text-muted small">Exam Date</div>
+                            <div class="fw-bold text-dark">{{ us.exam_date }}</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="d-flex gap-2">
-                    <a href="/subjects/edit/{{ us.id }}/" class="btn btn-sm btn-primary">Edit</a>
-                    <a href="/subjects/delete/{{ us.id }}/" class="btn btn-sm btn-danger">Delete</a>
+                    <a href="/subjects/edit/{{ us.id }}/" class="btn btn-light btn-sm flex-grow-1 rounded-3 py-2 fw-semibold text-secondary-emphasis border-light-subtle">
+                        View Details
+                    </a>
+                    <a href="/subjects/delete/{{ us.id }}/" class="btn btn-light btn-sm rounded-3 px-3 py-2 border-0 text-danger-emphasis">
+                        <i class="bi bi-trash"></i>
+                    </a>
                 </div>
             </div>
         </div>
     </div>
     {% endfor %}
 </div>
+
 {% else %}
-<div class="text-center mt-5">
-    <h5 class="text-muted">No subjects yet. Add your first subject!</h5>
-    <a href="/subjects/add/" class="btn btn-primary mt-3">+ Add Subject</a>
+<div class="text-center py-5 px-4 my-5 rounded-5" style="background: linear-gradient(180deg, #ffffff 0%, #fcf9ff 100%); border: 1px dashed #e2e8f0;">
+    <div class="mb-4 d-inline-block p-4 rounded-circle bg-white shadow-sm">
+        <span style="font-size: 2.5rem;">📖</span>
+    </div>
+    <h3 class="fw-bold text-dark">Your shelf is empty</h3>
+    <p class="text-secondary mb-4">Start your journey by adding the subjects you're studying this semester.</p>
+    <a href="/subjects/add/" class="btn shadow-sm px-5 py-3 rounded-4 fw-bold text-white border-0" 
+       style="background: linear-gradient(135deg, #66E0FF 0%, #a29bfe 100%);">
+       Add Your First Subject
+    </a>
 </div>
 {% endif %}
 {% endblock %}
