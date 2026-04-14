@@ -113,7 +113,7 @@ class StudySessionManager(models.Manager):
             
         session = self.create(user_subject=user_subject, duration_minutes=duration_minutes, notes=notes , date=session_date, study_plan_item=study_plan_item)
         xp = max(1, duration_minutes // 10)
-        user_subject.user.add_xp_and_streak(xp)
+        user_subject.user.add_xp_and_streak(xp, session_date)
 
         return session
     
@@ -121,19 +121,40 @@ class StudySessionManager(models.Manager):
         sessions = self.filter(study_plan_item=study_plan_item)
         
         if not sessions.exists():
-            return 0  # No sessions to remove
+            return 0
         
         total_xp_to_remove = sum(
             max(1, session.duration_minutes // 10) 
             for session in sessions
         )
         
+        session_date = sessions.first().date
         user = study_plan_item.user_subject.user
         
         deleted_count, _ = sessions.delete()
         
         if deleted_count > 0:
             user.xp_points = max(0, user.xp_points - total_xp_to_remove)
+            today = date.today()
+            if session_date == today:
+                has_sessions_today = StudySession.objects.filter(
+                    user_subject__user=user,
+                    date=today
+                ).exists()
+                
+                if not has_sessions_today:
+                    yesterday = today - timedelta(days=1)
+                
+                    if user.last_study_date == today:
+                        if StudySession.objects.filter(
+                            user_subject__user=user,
+                            date=yesterday
+                        ).exists():
+                            user.current_streak = max(0, user.current_streak - 1)
+                            user.last_study_date = yesterday
+                        else:
+                            user.current_streak = 0
+                            user.last_study_date = None
             user.save()
         
         return total_xp_to_remove
@@ -155,7 +176,11 @@ class StudySessionManager(models.Manager):
         
         for session in sessions:
             day=str(session.date)
-            result[day] += session.duration_minutes / 60
+            hours = session.duration_minutes / 60
+            result[day] += hours
+
+        for day in result:
+            result[day] = round(result[day], 2)
         
         return result
 
@@ -179,16 +204,18 @@ class User(models.Model):
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
     
-    def add_xp_and_streak(self, xp=5):
+    def add_xp_and_streak(self, xp=5, session_date=None):
         self.xp_points += xp
+        study_date = session_date or date.today()
         today = date.today()
 
-        if self.last_study_date == today - timedelta(days=1):
-            self.current_streak += 1
-        elif self.last_study_date != today:
-            self.current_streak = 1
-
-        self.last_study_date = today
+        if study_date == today:
+            if self.last_study_date != today:
+                if self.last_study_date == today - timedelta(days=1):
+                    self.current_streak += 1
+                else:
+                    self.current_streak = 1
+                self.last_study_date = today
         self.save()
         self.check_badges()
 
