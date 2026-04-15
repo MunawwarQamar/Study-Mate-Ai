@@ -1,6 +1,6 @@
 import httpx
 import os
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect , get_object_or_404
 from django.http import JsonResponse
 from django.db import transaction
 from django.core.mail import send_mail
@@ -819,6 +819,28 @@ Message:
         return redirect('contact_us')
     
     return render(request, 'contact_us.html')
+
+def contact_messages_list(request):
+    if not request.session.get('user_id'):
+        return redirect('auth')
+    
+    user = User.objects.get(id=request.session['user_id'])
+    if not user.is_staff:
+        messages.error(request, "You don't have permission to view this page.")
+        return redirect('dashboard')
+    
+    messages_list = ContactMessage.objects.all().order_by('-created_at')
+    
+    context = {
+        'messages': messages_list,
+    }
+    return render(request, 'contact_messages.html', context)
+
+def mark_message_read(request, message_id):
+    message = get_object_or_404(ContactMessage, id=message_id)
+    message.is_read = True
+    message.save()
+    return redirect('contact_messages')
 
 # ─── SUBJECTS ───
 

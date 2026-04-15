@@ -234,6 +234,8 @@ class User(models.Model):
     current_streak = models.IntegerField(default=0)
     last_study_date = models.DateField(null=True, blank=True)
 
+    is_staff = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     objects = UserManager()
