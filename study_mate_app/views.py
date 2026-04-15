@@ -104,6 +104,7 @@ def dashboard(request):
 def serialize_room(room, current_user):
     members_count = room.memberships.count()
     is_joined = room.memberships.filter(user=current_user).exists()
+    is_owner = room.created_by_id == current_user.id
 
     if members_count >= room.max_members:
         status = 'Full'
@@ -123,6 +124,7 @@ def serialize_room(room, current_user):
         'status': status,
         'description': room.description,
         'is_joined': is_joined,
+        'is_owner': is_owner,
     }
 
 
@@ -249,6 +251,9 @@ def leave_room_ajax(request, room_id):
     except StudyRoom.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Room not found.'}, status=404)
 
+    if room.created_by_id == user.id:
+        return JsonResponse({'success': False, 'message': 'Room owner cannot leave the room. You can edit or delete it instead.'}, status=400)
+
     membership = RoomMember.objects.filter(room=room, user=user).first()
     if not membership:
         return JsonResponse({'success': False, 'message': 'You are not in this room.'}, status=400)
@@ -293,6 +298,8 @@ def room_details_ajax(request, room_id):
         'members': members,
         'extra': extra,
     })
+
+
 @require_POST
 def create_room_ajax(request):
     if not request.session.get('user_id'):
@@ -305,7 +312,6 @@ def create_room_ajax(request):
     exam_date = request.POST.get('exam_date', '').strip()
     max_members = request.POST.get('max_members', '').strip()
     description = request.POST.get('description', '').strip()
-
     session_goal = request.POST.get('session_goal', '').strip()
     scheduled_time = request.POST.get('scheduled_time', '').strip()
     duration = request.POST.get('duration', '').strip()
@@ -347,6 +353,98 @@ def create_room_ajax(request):
         'success': True,
         'message': 'Room created successfully.',
         'room': serialize_room(room, user),
+        'stats': calculate_room_stats_queryset(user, all_rooms_for_stats),
+        'subjects': [subject.name for subject in subjects],
+    })
+
+
+@require_POST
+def update_room_ajax(request, room_id):
+    if not request.session.get('user_id'):
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
+
+    user = User.objects.get(id=request.session['user_id'])
+
+    try:
+        room = StudyRoom.objects.get(id=room_id)
+    except StudyRoom.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Room not found.'}, status=404)
+
+    if room.created_by_id != user.id:
+        return JsonResponse({'success': False, 'message': 'Only the room owner can edit this room.'}, status=403)
+
+    name = request.POST.get('name', '').strip()
+    subject_name = request.POST.get('subject', '').strip()
+    exam_date = request.POST.get('exam_date', '').strip()
+    max_members = request.POST.get('max_members', '').strip()
+    description = request.POST.get('description', '').strip()
+    session_goal = request.POST.get('session_goal', '').strip()
+    scheduled_time = request.POST.get('scheduled_time', '').strip()
+    duration = request.POST.get('duration', '').strip()
+    meeting_link = request.POST.get('meeting_link', '').strip()
+    shared_notes = request.POST.get('shared_notes', '').strip()
+
+    if not all([name, subject_name, exam_date, max_members, description, session_goal, scheduled_time, duration, meeting_link, shared_notes]):
+        return JsonResponse({'success': False, 'message': 'Please fill in all fields.'}, status=400)
+
+    try:
+        max_members = int(max_members)
+        if max_members < 2:
+            return JsonResponse({'success': False, 'message': 'Max members must be at least 2.'}, status=400)
+        if max_members < room.memberships.count():
+            return JsonResponse({'success': False, 'message': 'Max members cannot be less than current joined members.'}, status=400)
+    except ValueError:
+        return JsonResponse({'success': False, 'message': 'Max members must be a valid number.'}, status=400)
+
+    subject, _ = Subject.objects.get_or_create(name=subject_name)
+
+    room.subject = subject
+    room.name = name
+    room.exam_date = exam_date
+    room.max_members = max_members
+    room.description = description
+    room.session_goal = session_goal
+    room.scheduled_time = scheduled_time
+    room.duration = duration
+    room.meeting_link = meeting_link
+    room.shared_notes = shared_notes
+    room.save()
+
+    all_rooms_for_stats = StudyRoom.objects.select_related('subject', 'created_by').prefetch_related('memberships')
+    subjects = Subject.objects.all().order_by('name')
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Room updated successfully.',
+        'room': serialize_room(room, user),
+        'stats': calculate_room_stats_queryset(user, all_rooms_for_stats),
+        'subjects': [subject.name for subject in subjects],
+    })
+
+
+@require_POST
+def delete_room_ajax(request, room_id):
+    if not request.session.get('user_id'):
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
+
+    user = User.objects.get(id=request.session['user_id'])
+
+    try:
+        room = StudyRoom.objects.get(id=room_id)
+    except StudyRoom.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Room not found.'}, status=404)
+
+    if room.created_by_id != user.id:
+        return JsonResponse({'success': False, 'message': 'Only the room owner can delete this room.'}, status=403)
+
+    room.delete()
+
+    all_rooms_for_stats = StudyRoom.objects.select_related('subject', 'created_by').prefetch_related('memberships')
+    subjects = Subject.objects.all().order_by('name')
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Room deleted successfully.',
         'stats': calculate_room_stats_queryset(user, all_rooms_for_stats),
         'subjects': [subject.name for subject in subjects],
     })
