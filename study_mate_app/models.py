@@ -100,6 +100,42 @@ class UserManager(models.Manager):
         email = data.get('email' , '').strip()
         return User.objects.filter(email=email).first()
 
+class ContactManager(models.Manager):
+    def validate_message(self, data):
+        errors = {}
+        
+        name = data.get('name', '').strip()
+        if not name:
+            errors['name'] = 'Name is required.'
+        elif len(name) < 2:
+            errors['name'] = 'Name must be at least 2 characters.'
+        
+        email = data.get('email', '').strip()
+        if not email:
+            errors['email'] = 'Email is required.'
+        elif not EMAIL_REGEX.match(email):
+            errors['email'] = 'Please enter a valid email address.'
+        
+        message = data.get('message', '').strip()
+        if not message:
+            errors['message'] = 'Message is required.'
+        elif len(message) < 10:
+            errors['message'] = 'Message must be at least 10 characters.'
+        
+        return errors
+    
+    def create_message(self, data):
+        name = data.get('name', '').strip()
+        email = data.get('email', '').strip()
+        message = data.get('message', '').strip()
+        
+        contact = ContactMessage.objects.create(
+            name=name,
+            email=email,
+            message=message
+        )
+        return contact
+
 class StudySessionManager(models.Manager):
     def log_session(self, user_subject, duration_minutes, notes, session_date, study_plan_item=None):
         if study_plan_item:
@@ -288,6 +324,18 @@ class User(models.Model):
             ).decode()
 
         self.save()
+
+class ContactMessage(models.Model):
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    
+    objects = ContactManager()
+
+    def __str__(self):
+        return f"Message from {self.name}"
 
 class Badge(models.Model):
     name = models.CharField(max_length=50)

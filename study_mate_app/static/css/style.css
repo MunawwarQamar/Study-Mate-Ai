@@ -1214,6 +1214,9 @@ form textarea {
 @media (max-width: 768px) {
     .room-extra-grid {
         grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 576px) {
     .next-badge-wrapper {
         flex-direction: column;
