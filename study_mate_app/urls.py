@@ -21,6 +21,8 @@ urlpatterns = [
     #profile
     path('profile/', views.profile_page, name='profile_page'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
+    path('admin-messages/', views.contact_messages_list, name='contact_messages'),
+    path('admin-messages/<int:message_id>/mark-read/', views.mark_message_read, name='mark_message_read'),
     # Subjects
     path('subjects/' , views.all_subjects, name='all_subjects'),
     path('subjects/add/' , views.add_subject, name='add_subject'),

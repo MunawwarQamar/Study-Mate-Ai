@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block page_title %}Admin - Contact Messages{% endblock %}
+{% block page_subtitle %}Track app messages.{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+    <h2 class="fw-bold mb-4">Contact Messages</h2>
+    
+    {% if messages %}
+        <div class="messages-wrapper">
+            <div class="table-responsive">
+                <table class="table table-hover messages-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Message</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for msg in messages %}
+                        <tr class="{% if not msg.is_read %}table-unread{% endif %}">
+                            <td>{{ msg.name }}</td>
+                            <td>{{ msg.email }}</td>
+                            <td>{{ msg.message|truncatewords:20 }}</td>
+                            <td>{{ msg.created_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if msg.is_read %}
+                                    <span class="badge badge-read">Read</span>
+                                {% else %}
+                                    <span class="badge badge-unread">Unread</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not msg.is_read %}
+                                    <a href="{% url 'mark_message_read' msg.id %}" class="btn-mark-read">
+                                        Mark as Read
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-custom">
+            No messages yet.
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}
