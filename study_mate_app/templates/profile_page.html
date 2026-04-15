@@ -5,49 +5,67 @@
 {% block page_subtitle %}Your progress starts with one more session.{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container py-5 profile-page">
 
-    <!-- Profile Info -->
-    <div class="text-center mb-4">
-        <img src="{{ user.profile_image.url }}" class="img-thumbnail" width="120">
-        <h2 class="mt-2">{{ user.first_name }} {{ user.last_name }}</h2>
-        <p class="text-muted">{{ user.email }}</p>
+    <div class="card shadow-sm border-0 mb-4 text-center p-4 profile-header">
+        <img src="{{ user.profile_image.url }}" class="rounded-circle mx-auto profile-img">
+
+        <h3 class="mt-3 mb-0 gradient-text">{{ user.first_name }} {{ user.last_name }}</h3>
+        <p class="text-muted mb-2">{{ user.email }}</p>
+
+        <a href="{% url 'edit_profile' %}" class="btn btn-primary btn-sm mt-2">
+            Edit Profile
+        </a>
     </div>
 
-    <!-- Stats -->
-    <div class="row text-center mb-4">
-        <div class="col-md-6">
-            <h5>Total Study Hours</h5>
-            <p>{{ total_hours }}</p>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-6">
+            <div class="card text-center shadow-sm border-0 stat-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Study Hours</h6>
+                    <h4 class="text-primary">{{ total_hours }}</h4>
+                </div>
+            </div>
         </div>
-        <div class="col-md-6">
-            <h5>Current Streak 🔥</h5>
-            <p>{{ user.current_streak }} days</p>
+
+        <div class="col-6 col-md-6">
+            <div class="card text-center shadow-sm border-0 stat-card">
+                <div class="card-body">
+                    <h6 class="text-muted">Current Streak 🔥</h6>
+                    <h4 class="text-primary">{{ user.current_streak }} days</h4>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- XP Progress -->
-    <div class="card mb-4">
+    <div class="card shadow-sm border-0 mb-4 xp-card">
         <div class="card-body">
-            <h4 class="card-title mb-3">XP Progress</h4>
-            <p class="mb-2">Level: <span class="badge bg-primary"> {{ xp_data.level }} </span></p>
+            <h5 class="mb-3 gradient-text fw-bold">XP Progress</h5>
 
-            <p class="mb-2">XP: <span class="badge bg-success"> {{ xp_data.current_xp }}</span>
-                / <span class="badge bg-secondary"> {{ xp_data.next_level_xp }} </span></p>
+            <div class="d-flex justify-content-between mb-2">
+                <span>Level {{ xp_data.level }}</span>
+                <span>{{ xp_data.progress_percent }}%</span>
+            </div>
 
-            <p class="mb-0">Progress: <strong>{{ xp_data.progress_percent }}%</strong></p>
+            <div class="progress mb-3">
+                <div class="progress-bar bg-primary" style="width: {{ xp_data.progress_percent }}%">
+                </div>
+            </div>
+
+            <small class="text-muted">
+                {{ xp_data.current_xp }} / {{ xp_data.next_level_xp }} XP
+            </small>
         </div>
     </div>
 
-    <!-- Earned Badges -->
-    <div class="mb-4">
-        <h4>Earned Badges</h4>
+    <div class="card shadow-sm border-0 mb-4 p-3">
+        <h5 class="mb-3 gradient-text fw-bold">Earned Badges</h5>
 
-        <div class="row">
+        <div class="row g-3 text-center">
             {% for ub in earned_badges %}
-            <div class="col-md-2 col-4 text-center mb-3">
-                <img src="{{ ub.badge.icon.url }}" class="img-fluid">
-                <p>{{ ub.badge.name }}</p>
+            <div class="col-4 col-md-2">
+                <img src="{{ ub.badge.icon.url }}" class="img-fluid badge-icon">
+                <p class="small mt-2">{{ ub.badge.name }}</p>
             </div>
             {% empty %}
             <p>No badges yet</p>
@@ -55,35 +73,41 @@
         </div>
     </div>
 
-    <!-- Next Badge -->
-    <div class="mb-4">
-        <h4>Next Badge</h4>
+<div class="card shadow-sm border-0 mb-4 p-4">
+    <h5 class="gradient-text mb-3 fw-bold">Next Badge</h5>
 
-        {% if next_badge %}
-        <div class="text-center">
-            <img src="{{ next_badge.icon.url }}" width="80">
-            <p>{{ next_badge.name }}</p>
-            <p class="text-muted">Requires {{ next_badge.xp_required }} XP</p>
+    {% if next_badge %}
+    <div class="d-flex align-items-center gap-4 next-badge-wrapper">
+
+        <img src="{{ next_badge.icon.url }}" class="next-badge">
+
+        <div>
+            <h6 class="mb-1 fw-semibold">{{ next_badge.name }}</h6>
+            <p class="text-muted mb-0">
+                {{ next_badge.xp_required }} XP needed
+            </p>
         </div>
-        {% else %}
-        <p>All badges unlocked 🎉</p>
-        {% endif %}
-    </div>
 
-    <!-- Weekly Study -->
-    <div class="mb-4">
-        <h4>Weekly Study Hours</h4>
-
-        <ul class="list-group">
-            {% for day, hours in weekly_data.items %}
-            <li class="list-group-item d-flex justify-content-between">
-                <span>{{ day }}</span>
-                <span>{{ hours }} hrs</span>
-            </li>
-            {% endfor %}
-        </ul>
     </div>
-    <a href="{% url 'edit_profile' %}">Edit Profile</a>
+    {% else %}
+    <p>All badges unlocked 🎉</p>
+    {% endif %}
+</div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h5 class="mb-3 gradient-text fw-bold">Weekly Study</h5>
+
+            <ul class="list-group list-group-flush">
+                {% for day, hours in weekly_data.items %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>{{ day }}</span>
+                    <span class="text-primary fw-bold">{{ hours }} hrs</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 
 </div>
 
