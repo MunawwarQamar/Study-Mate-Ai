@@ -1,14 +1,13 @@
 :root {
     --bg-light: #F8FAFF;
+    --bg-gradient-start: #f0f5ff;
+    --bg-gradient-end: #f5f0ff;
     --card-light: #FFFFFF;
-
     --primary: #4FACFE;  
     --secondary: #A855F7;
     --accent: #22D3EE;
-
     --text-dark: #1F2937;
     --text-muted: #6B7280;
-
     --border-light: #E5E7EB;
 }
 
@@ -18,9 +17,11 @@
 }
 
 body {
-    background-color: var(--bg);
+    background: linear-gradient(135deg, var(--bg-gradient-start) 10%, var(--bg-gradient-end) 100%);
+    background-attachment: fixed; /* Keeps gradient in place when scrolling */
     font-family: 'Segoe UI', sans-serif;
-    color: var(--text);
+    color: var(--text-dark);
+    min-height: 100vh;
 }
 
 .profile-page {
@@ -66,13 +67,15 @@ body {
 }
 
 .xp-card {
-    background: linear-gradient(135deg, #E0F2FE, #F3E8FF);
+    background: var(--card-light);
     border: none;
 }
 
 .progress {
     height: 10px;
-    background: white;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
 }
 
 .progress-bar {
