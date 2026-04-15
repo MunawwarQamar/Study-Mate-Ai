@@ -413,6 +413,13 @@ class StudyRoom(models.Model):
     exam_date = models.DateField()
     max_members = models.IntegerField()
 
+    description = models.TextField(blank=True)
+    session_goal = models.TextField(blank=True)
+    scheduled_time = models.CharField(max_length=100, blank=True)
+    duration = models.CharField(max_length=50, blank=True)
+    meeting_link = models.URLField(blank=True)
+    shared_notes = models.TextField(blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -420,7 +427,6 @@ class StudyRoom(models.Model):
 
     def __str__(self):
         return f'{self.name} ({self.subject.name})'
-
 class RoomMember(models.Model):
     room = models.ForeignKey(StudyRoom, on_delete=models.CASCADE, related_name='memberships')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='room_memberships')

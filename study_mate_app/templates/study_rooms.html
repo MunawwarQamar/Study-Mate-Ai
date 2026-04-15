@@ -1,20 +1,798 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {% load static %} {% block title %}Study Rooms |
+StudyMate AI{% endblock %} {% block page_title %}Study Rooms{% endblock %} {%
+block page_subtitle %}Join collaborative study rooms and learn with others.{%
+endblock %} {% block content %}
+<div class="study-rooms-page">
+  <div id="roomsAlert"></div>
 
-{% block title %}Study Rooms | StudyMate AI{% endblock %}
-{% block page_title %}Study Rooms{% endblock %}
-{% block page_subtitle %}Join or create collaborative study rooms.{% endblock %}
+  <div class="rooms-topbar">
+    <div>
+      <h2 class="rooms-main-title mb-2">
+        Find the right room for your next study session
+      </h2>
+      <p class="rooms-main-subtitle mb-0">
+        Browse active rooms, filter by subject, and join the ones that match
+        your goals.
+      </p>
+    </div>
 
-{% block content %}
-<div class="container-fluid py-4">
-  <div class="placeholder-page-card">
-    <h2 class="placeholder-title">Study Rooms</h2>
-    <p class="placeholder-text">
-      This page is connected and ready. The full Study Rooms feature will be implemented here.
-    </p>
+    <button
+      type="button"
+      class="btn create-room-btn"
+      data-bs-toggle="modal"
+      data-bs-target="#createRoomModal"
+    >
+      <i class="bi bi-plus-lg"></i>
+      <span>Create Room</span>
+    </button>
+  </div>
 
-    <div class="placeholder-actions">
-      <a href="{% url 'dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
+  <div class="row g-4 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="dashboard-card room-stat-card h-100">
+        <p class="room-stat-label">Total Rooms</p>
+        <h3 class="room-stat-value" id="totalRoomsValue">{{ total_rooms }}</h3>
+        <p class="room-stat-note mb-0">Available study groups</p>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="dashboard-card room-stat-card h-100">
+        <p class="room-stat-label">Joined Rooms</p>
+        <h3 class="room-stat-value" id="joinedRoomsValue">
+          {{ joined_rooms }}
+        </h3>
+        <p class="room-stat-note mb-0">Rooms you are in</p>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="dashboard-card room-stat-card h-100">
+        <p class="room-stat-label">Upcoming Exam Rooms</p>
+        <h3 class="room-stat-value" id="upcomingExamRoomsValue">
+          {{ upcoming_exam_rooms }}
+        </h3>
+        <p class="room-stat-note mb-0">Rooms with close exam dates</p>
+      </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="dashboard-card room-stat-card h-100">
+        <p class="room-stat-label">Available Spots</p>
+        <h3 class="room-stat-value" id="availableSpotsValue">
+          {{ available_spots }}
+        </h3>
+        <p class="room-stat-note mb-0">Open seats across rooms</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-card rooms-filter-card mb-4">
+    <div class="row g-3">
+      <div class="col-12 col-lg-4">
+        <label class="form-label filter-label">Search</label>
+        <div class="search-input-wrap">
+          <i class="bi bi-search"></i>
+          <input
+            type="text"
+            class="form-control room-search-input"
+            id="roomSearchInput"
+            placeholder="Search by room name"
+          />
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-lg-3">
+        <label class="form-label filter-label">Subject</label>
+        <select class="form-select room-filter-select" id="roomSubjectFilter">
+          <option selected>All Subjects</option>
+          {% for subject in subjects %}
+          <option>{{ subject }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-12 col-md-6 col-lg-3">
+        <label class="form-label filter-label">Availability</label>
+        <select
+          class="form-select room-filter-select"
+          id="roomAvailabilityFilter"
+        >
+          <option selected>All Rooms</option>
+          <option>Open</option>
+          <option>Almost Full</option>
+          <option>Full</option>
+          <option>Joined Rooms</option>
+        </select>
+      </div>
+
+      <div class="col-12 col-lg-2">
+        <label class="form-label filter-label">Action</label>
+        <button
+          type="button"
+          class="btn clear-filter-btn w-100"
+          id="clearFiltersBtn"
+        >
+          Clear
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="rooms-grid">
+    <div class="row g-4" id="roomsContainer">
+      {% for room in rooms %}
+      <div class="col-12 col-md-6 col-xxl-4 room-col">
+        <div class="dashboard-card room-card h-100">
+          <div class="room-card-top">
+            <div>
+              <div class="room-badges mb-3">
+                <span class="room-subject-badge">{{ room.subject }}</span>
+
+                <span
+                  class="room-status-badge {% if room.status == 'Open' %}status-open {% elif room.status == 'Almost Full' %}status-warning {% else %}status-full{% endif %}"
+                >
+                  {{ room.status }}
+                </span>
+              </div>
+
+              <h4 class="room-name">{{ room.name }}</h4>
+              <p class="room-description mb-0">{{ room.description }}</p>
+            </div>
+          </div>
+
+          <div class="room-meta-list">
+            <div class="room-meta-item">
+              <span class="room-meta-label">Created by</span>
+              <span class="room-meta-value">{{ room.created_by }}</span>
+            </div>
+
+            <div class="room-meta-item">
+              <span class="room-meta-label">Exam date</span>
+              <span class="room-meta-value">{{ room.exam_date }}</span>
+            </div>
+
+            <div class="room-meta-item">
+              <span class="room-meta-label">Members</span>
+              <span class="room-meta-value"
+                >{{ room.members_count }}/{{ room.max_members }}</span
+              >
+            </div>
+          </div>
+
+          <div class="room-capacity-wrap">
+            <div class="room-capacity-head">
+              <span>Capacity</span>
+              <span>{{ room.members_count }}/{{ room.max_members }}</span>
+            </div>
+
+            <div class="room-capacity-bar">
+              <div
+                class="room-capacity-fill"
+                style="width: {% widthratio room.members_count room.max_members 100 %}%;"
+              ></div>
+            </div>
+          </div>
+
+          <div class="room-card-actions">
+            <button
+              type="button"
+              class="btn room-secondary-btn view-room-btn"
+              data-room-id="{{ room.id }}"
+            >
+              View Details
+            </button>
+
+            {% if room.is_joined %}
+            <button type="button" class="btn room-joined-btn">Joined</button>
+            {% elif room.status == 'Full' %}
+            <button type="button" class="btn room-disabled-btn" disabled>
+              Full
+            </button>
+            {% else %}
+            <button
+              type="button"
+              class="btn room-primary-btn join-room-btn"
+              data-room-id="{{ room.id }}"
+            >
+              Join Room
+            </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <div class="dashboard-card p-4 text-center">
+          <p class="mb-0">No rooms found.</p>
+        </div>
+      </div>
+      {% endfor %}
     </div>
   </div>
 </div>
+
+<!-- Create Room Modal -->
+<div class="modal fade" id="createRoomModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content room-modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Create Study Room</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="createRoomForm">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label filter-label">Room Name</label>
+              <input
+                type="text"
+                name="name"
+                class="form-control room-search-input"
+                placeholder="Enter room name"
+                required
+              />
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label filter-label">Subject</label>
+              <input
+                type="text"
+                name="subject"
+                class="form-control room-search-input"
+                placeholder="Enter subject name"
+                required
+              />
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label filter-label">Exam Date</label>
+              <input
+                type="date"
+                name="exam_date"
+                class="form-control room-search-input"
+                required
+              />
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label filter-label">Max Members</label>
+              <input
+                type="number"
+                name="max_members"
+                min="2"
+                class="form-control room-search-input"
+                placeholder="e.g. 5"
+                required
+              />
+            </div>
+
+            <div class="col-12">
+              <label class="form-label filter-label">Description</label>
+              <textarea
+                name="description"
+                class="form-control room-search-input room-textarea"
+                rows="3"
+                placeholder="Write a short room description"
+                required
+              ></textarea>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label filter-label">Session Goal</label>
+              <textarea
+                name="session_goal"
+                class="form-control room-search-input room-textarea"
+                rows="3"
+                placeholder="What will you study in this session?"
+                required
+              ></textarea>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label filter-label">Scheduled Time</label>
+              <input
+                type="text"
+                name="scheduled_time"
+                class="form-control room-search-input"
+                placeholder="e.g. Today, 7:00 PM"
+                required
+              />
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label filter-label">Duration</label>
+              <input
+                type="text"
+                name="duration"
+                class="form-control room-search-input"
+                placeholder="e.g. 90 min"
+                required
+              />
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label filter-label">Meeting Link</label>
+              <input
+                type="url"
+                name="meeting_link"
+                class="form-control room-search-input"
+                placeholder="Paste Google Meet or Zoom link"
+                required
+              />
+            </div>
+
+            <div class="col-12">
+              <label class="form-label filter-label">Shared Notes</label>
+              <textarea
+                name="shared_notes"
+                class="form-control room-search-input room-textarea"
+                rows="4"
+                placeholder="Add important notes for members"
+                required
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 mt-4 flex-wrap">
+            <button
+              type="button"
+              class="btn room-secondary-btn modal-btn"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn room-primary-btn modal-btn"
+              id="createRoomSubmitBtn"
+            >
+              Create Room
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Room Details Modal -->
+<div class="modal fade" id="roomDetailsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content room-modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Room Details</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <div class="modal-body" id="roomDetailsBody">
+        <div class="text-center py-4">
+          <div class="spinner-border text-primary" role="status"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  const roomsContainer = document.getElementById("roomsContainer");
+  const roomSearchInput = document.getElementById("roomSearchInput");
+  const roomSubjectFilter = document.getElementById("roomSubjectFilter");
+  const roomAvailabilityFilter = document.getElementById(
+    "roomAvailabilityFilter",
+  );
+  const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+  const createRoomForm = document.getElementById("createRoomForm");
+  const createRoomSubmitBtn = document.getElementById("createRoomSubmitBtn");
+  const roomDetailsBody = document.getElementById("roomDetailsBody");
+
+  const detailsModal = new bootstrap.Modal(
+    document.getElementById("roomDetailsModal"),
+  );
+  const createModalElement = document.getElementById("createRoomModal");
+  const createRoomModal =
+    bootstrap.Modal.getOrCreateInstance(createModalElement);
+
+  function getCSRFToken() {
+    const cookies = document.cookie.split(";");
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.startsWith("csrftoken=")) {
+        return cookie.substring("csrftoken=".length);
+      }
+    }
+    return "";
+  }
+
+  function showAlert(message, type = "success") {
+    const alertContainer = document.getElementById("roomsAlert");
+    alertContainer.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+  }
+
+  function updateStats(stats) {
+    document.getElementById("totalRoomsValue").textContent = stats.total_rooms;
+    document.getElementById("joinedRoomsValue").textContent =
+      stats.joined_rooms;
+    document.getElementById("upcomingExamRoomsValue").textContent =
+      stats.upcoming_exam_rooms;
+    document.getElementById("availableSpotsValue").textContent =
+      stats.available_spots;
+  }
+
+  function getStatusClass(status) {
+    if (status === "Open") return "status-open";
+    if (status === "Almost Full") return "status-warning";
+    return "status-full";
+  }
+
+  function renderRoomCard(room) {
+    const capacityPercent = Math.round(
+      (room.members_count / room.max_members) * 100,
+    );
+
+    let actionButton = "";
+    if (room.is_joined) {
+      actionButton = `<button type="button" class="btn room-joined-btn">Joined</button>`;
+    } else if (room.status === "Full") {
+      actionButton = `<button type="button" class="btn room-disabled-btn" disabled>Full</button>`;
+    } else {
+      actionButton = `<button type="button" class="btn room-primary-btn join-room-btn" data-room-id="${room.id}">Join Room</button>`;
+    }
+
+    return `
+            <div class="col-12 col-md-6 col-xxl-4 room-col">
+                <div class="dashboard-card room-card h-100">
+                    <div class="room-card-top">
+                        <div>
+                            <div class="room-badges mb-3">
+                                <span class="room-subject-badge">${room.subject}</span>
+                                <span class="room-status-badge ${getStatusClass(room.status)}">${room.status}</span>
+                            </div>
+
+                            <h4 class="room-name">${room.name}</h4>
+                            <p class="room-description mb-0">${room.description}</p>
+                        </div>
+                    </div>
+
+                    <div class="room-meta-list">
+                        <div class="room-meta-item">
+                            <span class="room-meta-label">Created by</span>
+                            <span class="room-meta-value">${room.created_by}</span>
+                        </div>
+
+                        <div class="room-meta-item">
+                            <span class="room-meta-label">Exam date</span>
+                            <span class="room-meta-value">${room.exam_date}</span>
+                        </div>
+
+                        <div class="room-meta-item">
+                            <span class="room-meta-label">Members</span>
+                            <span class="room-meta-value">${room.members_count}/${room.max_members}</span>
+                        </div>
+                    </div>
+
+                    <div class="room-capacity-wrap">
+                        <div class="room-capacity-head">
+                            <span>Capacity</span>
+                            <span>${room.members_count}/${room.max_members}</span>
+                        </div>
+
+                        <div class="room-capacity-bar">
+                            <div class="room-capacity-fill" style="width: ${capacityPercent}%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="room-card-actions">
+                        <button type="button" class="btn room-secondary-btn view-room-btn" data-room-id="${room.id}">
+                            View Details
+                        </button>
+                        ${actionButton}
+                    </div>
+                </div>
+            </div>
+        `;
+  }
+
+  function renderRooms(rooms) {
+    if (!rooms.length) {
+      roomsContainer.innerHTML = `
+                <div class="col-12">
+                    <div class="dashboard-card p-4 text-center">
+                        <p class="mb-0">No rooms found.</p>
+                    </div>
+                </div>
+            `;
+      return;
+    }
+
+    roomsContainer.innerHTML = rooms.map(renderRoomCard).join("");
+  }
+
+  function loadFilteredRooms() {
+    const params = new URLSearchParams({
+      search: roomSearchInput.value,
+      subject: roomSubjectFilter.value,
+      availability: roomAvailabilityFilter.value,
+    });
+
+    fetch(`/study-rooms/data/?${params.toString()}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (!data.success) {
+          showAlert(data.message || "Failed to load rooms.", "danger");
+          return;
+        }
+
+        renderRooms(data.rooms);
+        updateStats(data.stats);
+      })
+      .catch(() => {
+        showAlert("Something went wrong while loading rooms.", "danger");
+      });
+  }
+
+  function debounce(func, delay = 350) {
+    let timeout;
+    return (...args) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(null, args), delay);
+    };
+  }
+
+  const debouncedLoadRooms = debounce(loadFilteredRooms);
+
+  roomSearchInput.addEventListener("input", debouncedLoadRooms);
+  roomSubjectFilter.addEventListener("change", loadFilteredRooms);
+  roomAvailabilityFilter.addEventListener("change", loadFilteredRooms);
+
+  clearFiltersBtn.addEventListener("click", () => {
+    roomSearchInput.value = "";
+    roomSubjectFilter.value = "All Subjects";
+    roomAvailabilityFilter.value = "All Rooms";
+    loadFilteredRooms();
+  });
+
+  document.addEventListener("click", function (e) {
+    const joinBtn = e.target.closest(".join-room-btn");
+    if (joinBtn) {
+      const roomId = joinBtn.dataset.roomId;
+      joinBtn.disabled = true;
+
+      fetch(`/study-rooms/join/${roomId}/`, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": getCSRFToken(),
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (!data.success) {
+            showAlert(data.message || "Could not join room.", "danger");
+            return;
+          }
+
+          showAlert(data.message, "success");
+          loadFilteredRooms();
+        })
+        .catch(() => {
+          showAlert("Something went wrong while joining the room.", "danger");
+        })
+        .finally(() => {
+          joinBtn.disabled = false;
+        });
+    }
+
+    const leaveBtn = e.target.closest(".leave-room-btn");
+    if (leaveBtn) {
+      const roomId = leaveBtn.dataset.roomId;
+      leaveBtn.disabled = true;
+
+      fetch(`/study-rooms/leave/${roomId}/`, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": getCSRFToken(),
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (!data.success) {
+            showAlert(data.message || "Could not leave room.", "danger");
+            return;
+          }
+
+          detailsModal.hide();
+          showAlert(data.message, "success");
+          loadFilteredRooms();
+        })
+        .catch(() => {
+          showAlert("Something went wrong while leaving the room.", "danger");
+        })
+        .finally(() => {
+          leaveBtn.disabled = false;
+        });
+    }
+
+    const viewBtn = e.target.closest(".view-room-btn");
+    if (viewBtn) {
+      const roomId = viewBtn.dataset.roomId;
+
+      roomDetailsBody.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            `;
+      detailsModal.show();
+
+      fetch(`/study-rooms/details/${roomId}/`)
+        .then((response) => response.json())
+        .then((data) => {
+          if (!data.success) {
+            roomDetailsBody.innerHTML = `
+                            <div class="text-center py-4">
+                                <p class="mb-0">Failed to load room details.</p>
+                            </div>
+                        `;
+            return;
+          }
+
+          const room = data.room;
+          const members = data.members || [];
+          const extra = data.extra || {};
+
+          roomDetailsBody.innerHTML = `
+    <div class="room-details-wrap">
+        <div class="mb-3">
+            <div class="room-badges mb-3">
+                <span class="room-subject-badge">${room.subject}</span>
+                <span class="room-status-badge ${getStatusClass(room.status)}">${room.status}</span>
+            </div>
+
+            <h3 class="room-details-title">${room.name}</h3>
+            <p class="room-details-description mb-0">${room.description}</p>
+        </div>
+
+        <div class="room-details-grid">
+            <div class="room-details-item">
+                <span class="room-details-label">Created by</span>
+                <span class="room-details-value">${room.created_by}</span>
+            </div>
+            <div class="room-details-item">
+                <span class="room-details-label">Exam date</span>
+                <span class="room-details-value">${room.exam_date}</span>
+            </div>
+            <div class="room-details-item">
+                <span class="room-details-label">Members</span>
+                <span class="room-details-value">${room.members_count}/${room.max_members}</span>
+            </div>
+        </div>
+
+        <div class="room-extra-grid">
+            <div class="room-extra-card">
+                <span class="room-details-label">Session Goal</span>
+                <p class="room-extra-text mb-0">${extra.session_goal || "No goal added yet."}</p>
+            </div>
+
+            <div class="room-extra-card">
+                <span class="room-details-label">Scheduled Time</span>
+                <p class="room-extra-text mb-0">${extra.scheduled_time || "Not scheduled yet"}</p>
+            </div>
+
+            <div class="room-extra-card">
+                <span class="room-details-label">Duration</span>
+                <p class="room-extra-text mb-0">${extra.duration || "Not specified"}</p>
+            </div>
+        </div>
+
+        <div class="room-notes-card">
+            <span class="room-details-label">Shared Notes</span>
+            <p class="room-extra-text mb-0">${extra.shared_notes || "No notes yet."}</p>
+        </div>
+
+        <div class="mt-2">
+            <h6 class="fw-bold mb-3">Members</h6>
+            <div class="room-member-list">
+                ${
+                  members.length
+                    ? members
+                        .map(
+                          (member) =>
+                            `<span class="room-member-chip">${member}</span>`,
+                        )
+                        .join("")
+                    : '<p class="mb-0 text-muted">No members yet.</p>'
+                }
+            </div>
+        </div>
+
+<div class="room-details-actions mt-4">
+    ${
+      room.is_joined
+        ? `
+            <a href="${extra.meeting_link || "#"}" target="_blank" class="btn room-meeting-btn">
+                <i class="bi bi-camera-video"></i>
+                <span>Join Meeting</span>
+            </a>
+            <button type="button" class="btn room-leave-btn leave-room-btn" data-room-id="${room.id}">
+                Leave Room
+            </button>
+          `
+        : room.status === "Full"
+          ? `<button type="button" class="btn room-disabled-btn" disabled>Room is Full</button>`
+          : `<button type="button" class="btn room-primary-btn join-room-btn" data-room-id="${room.id}">Join Room</button>`
+    }
+</div>
+    </div>
+`;
+        })
+        .catch(() => {
+          roomDetailsBody.innerHTML = `
+                        <div class="text-center py-4">
+                            <p class="mb-0">Something went wrong while loading details.</p>
+                        </div>
+                    `;
+        });
+    }
+  });
+
+  createRoomForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    createRoomSubmitBtn.disabled = true;
+    createRoomSubmitBtn.textContent = "Creating...";
+
+    const formData = new FormData(createRoomForm);
+
+    fetch("/study-rooms/create/", {
+      method: "POST",
+      body: formData,
+      headers: {
+        "X-CSRFToken": getCSRFToken(),
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (!data.success) {
+          showAlert(data.message || "Could not create room.", "danger");
+          return;
+        }
+
+        roomSubjectFilter.innerHTML = `
+                <option selected>All Subjects</option>
+                ${data.subjects.map((subject) => `<option>${subject}</option>`).join("")}
+            `;
+
+        createRoomForm.reset();
+        createRoomModal.hide();
+        showAlert(data.message, "success");
+        loadFilteredRooms();
+      })
+      .catch(() => {
+        showAlert("Something went wrong while creating the room.", "danger");
+      })
+      .finally(() => {
+        createRoomSubmitBtn.disabled = false;
+        createRoomSubmitBtn.textContent = "Create Room";
+      });
+  });
+</script>
 {% endblock %}
