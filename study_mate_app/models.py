@@ -155,6 +155,7 @@ class StudySessionManager(models.Manager):
                         else:
                             user.current_streak = 0
                             user.last_study_date = None
+            user.recheck_badges()
             user.save()
         
         return total_xp_to_remove
@@ -235,6 +236,16 @@ class User(models.Model):
                         user=self,
                         badge=badge
                     )
+
+    def recheck_badges(self):
+        from .models import Badge, UserBadge
+        
+        badges_to_remove = Badge.objects.filter(xp_required__gt=self.xp_points)
+        
+        UserBadge.objects.filter(
+            user=self,
+            badge__in=badges_to_remove
+        ).delete()
 
     def get_xp_progress(self):
         level = 0
