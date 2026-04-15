@@ -1321,3 +1321,69 @@ form textarea {
         height: 60px;
     }
 }
+.room-form-input {
+    padding-left: 18px !important;
+    min-height: 48px;
+    border-radius: 14px;
+    border: 1.5px solid #CBD5E1 !important;
+    box-shadow: none !important;
+    background: #FFFFFF;
+}
+
+.room-form-input:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 0.18rem rgba(79, 70, 229, 0.12) !important;
+}
+
+.room-owner-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #EFF6FF;
+    color: #2563EB;
+}
+
+.room-owner-btn {
+    background: #EFF6FF;
+    color: #2563EB;
+    border: 1px solid #BFDBFE;
+    min-height: 44px;
+    border-radius: 12px;
+    padding: 10px 16px;
+    font-weight: 600;
+    flex: 1;
+}
+
+.room-edit-btn {
+    background: #FFF7ED;
+    color: #EA580C;
+    border: 1px solid #FED7AA;
+    min-height: 44px;
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-weight: 600;
+}
+
+.room-edit-btn:hover {
+    background: #FFEDD5;
+    color: #C2410C;
+}
+
+.room-delete-btn {
+    background: #FEF2F2;
+    color: #DC2626;
+    border: 1px solid #FECACA;
+    min-height: 44px;
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-weight: 600;
+}
+
+.room-delete-btn:hover {
+    background: #FEE2E2;
+    color: #B91C1C;
+}
