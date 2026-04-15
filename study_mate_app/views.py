@@ -3,7 +3,9 @@ import os
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.db import transaction
-from .models import Subject, UserSubject, User, StudyPlan, StudyPlanItem, StudySession, UserBadge, StudyRoom, RoomMember
+from django.core.mail import send_mail
+from django.conf import settings
+from .models import Subject, UserSubject, User, StudyPlan, StudyPlanItem, StudySession, UserBadge, StudyRoom, RoomMember, ContactMessage
 from openai import OpenAI
 import json
 from datetime import date, timedelta
@@ -778,9 +780,45 @@ def logout(request):
     return redirect('auth')
 
 def contact_us(request):
-    return render(request, 'contact_us.html')
-# a
+    if request.method == 'POST':
+        data = {
+            'name': request.POST.get('name', ''),
+            'email': request.POST.get('email', ''),
+            'message': request.POST.get('message', ''),
+        }
+        
+        errors = ContactMessage.objects.validate_message(data)
+        
+        if errors:
+            context = {
+                'errors': errors,
+                'name': data['name'],
+                'email': data['email'],
+                'message': data['message'],
+            }
+            return render(request, 'contact_us.html', context)
+        
+        ContactMessage.objects.create_message(data)
+        
+        send_mail(
+            subject=f"New Contact Message from {data['name']}",
+            message=f"""You received a new message from your StudyMate AI contact form:
 
+Name: {data['name']}
+Email: {data['email']}
+
+Message:
+{data['message']}
+""",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[settings.CONTACT_EMAIL],
+            fail_silently=True,  
+        )
+        
+        messages.success(request, "Thank you! Your message has been saved.")
+        return redirect('contact_us')
+    
+    return render(request, 'contact_us.html')
 
 # ─── SUBJECTS ───
 
