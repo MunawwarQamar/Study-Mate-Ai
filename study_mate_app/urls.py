@@ -11,7 +11,8 @@ urlpatterns = [
     path('study-rooms/details/<int:room_id>/', views.room_details_ajax, name='room_details_ajax'),
     path('study-rooms/create/', views.create_room_ajax, name='create_room_ajax'),
     path('study-rooms/update/<int:room_id>/', views.update_room_ajax, name='update_room_ajax'),
-    path('study-rooms/delete/<int:room_id>/', views.delete_room_ajax, name='delete_room_ajax'),    path('study-rooms/leave/<int:room_id>/', views.leave_room_ajax, name='leave_room_ajax'),
+    path('study-rooms/delete/<int:room_id>/', views.delete_room_ajax, name='delete_room_ajax'), 
+    path('study-rooms/leave/<int:room_id>/', views.leave_room_ajax, name='leave_room_ajax'),
     path('notifications/', views.notifications_page, name='notifications_page'),
     path('', views.home),
     path('auth/', views.auth_page, name='auth'),
@@ -35,5 +36,5 @@ urlpatterns = [
     # Tasks
     path('tasks/' , views.all_tasks, name='all_tasks'),
     path('tasks/toggle/<int:id>/' , views.toggle_task, name='toggle_task'),
-
+    path('tasks/toggle-ajax/<int:id>/', views.toggle_task_ajax, name='toggle_task_ajax'),
 ]
