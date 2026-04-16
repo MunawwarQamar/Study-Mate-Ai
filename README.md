@@ -89,6 +89,8 @@ Study-Mate-Ai/
 ├── .gitignore
 ├── manage.py
 └── README.md
+---
+
 ## 🗄️ Database Models
 
 - *User* — Authentication and profile data
@@ -101,6 +103,9 @@ Study-Mate-Ai/
 - *Notification* — Email notification records
 - *StudyRoom* — Community study rooms
 - *RoomMember* — Room membership
+- *ContactMessage*
+- *Badge*
+- *UserBadge*
 
 ---
 
