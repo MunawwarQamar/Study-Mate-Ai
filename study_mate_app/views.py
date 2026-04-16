@@ -39,14 +39,11 @@ def dashboard(request):
     weekly_tasks_count = weekly_tasks.count()
     weekly_progress_percent = int((completed_tasks_count / weekly_tasks_count) * 100) if weekly_tasks_count else 0
 
-    total_study_minutes = 0
     weekly_sessions = StudySession.objects.filter(
         user_subject__user=user,
         date__range=[week_start, week_end]
     )
-    for session in weekly_sessions:
-        total_study_minutes += session.duration_minutes
-
+    total_study_minutes = sum(session.duration_minutes for session in weekly_sessions)
     total_study_hours = round(total_study_minutes / 60, 1)
 
     latest_session = StudySession.objects.filter(
@@ -66,10 +63,8 @@ def dashboard(request):
         subject_total_tasks = subject_tasks.count()
         continue_percent = int((subject_completed_tasks / subject_total_tasks) * 100) if subject_total_tasks else 0
 
-        continue_total_minutes = 0
         all_subject_sessions = StudySession.objects.filter(user_subject=continue_subject)
-        for session in all_subject_sessions:
-            continue_total_minutes += session.duration_minutes
+        continue_total_minutes = sum(session.duration_minutes for session in all_subject_sessions)
 
         days_diff = (today - latest_session.date).days
         if days_diff == 0:
@@ -78,6 +73,43 @@ def dashboard(request):
             continue_last_studied_text = '1 day ago'
         else:
             continue_last_studied_text = f'{days_diff} days ago'
+
+    xp_data = user.get_xp_progress()
+    earned_badges = UserBadge.objects.filter(user=user).select_related('badge').order_by('-earned_at')[:4]
+    next_badge = user.get_next_badge()
+
+    weekly_goal_tasks = 5
+    weekly_goal_hours = 6
+    task_goal_progress = int((completed_tasks_count / weekly_goal_tasks) * 100) if weekly_goal_tasks else 0
+    hours_goal_progress = int((total_study_hours / weekly_goal_hours) * 100) if weekly_goal_hours else 0
+
+    if weekly_progress_percent == 0:
+        motivation_title = "Let’s build momentum this week"
+        motivation_text = "Start with one task today and begin growing your streak."
+    elif weekly_progress_percent < 50:
+        motivation_title = "Nice start — keep going"
+        motivation_text = "You are making progress. A little more today will make a big difference."
+    elif weekly_progress_percent < 100:
+        motivation_title = "You’re doing really well"
+        motivation_text = "Keep the energy up. You are getting close to your weekly goal."
+    else:
+        motivation_title = "Amazing work this week"
+        motivation_text = "You completed all your weekly tasks. Keep the streak alive."
+
+    week_days = []
+    for i in range(7):
+        current_day = week_start + timedelta(days=i)
+        has_session = StudySession.objects.filter(
+            user_subject__user=user,
+            date=current_day
+        ).exists()
+
+        week_days.append({
+            'label': current_day.strftime('%a'),
+            'date': current_day,
+            'is_today': current_day == today,
+            'done': has_session,
+        })
 
     context = {
         'user': user,
@@ -94,9 +126,21 @@ def dashboard(request):
         'continue_percent': continue_percent,
         'continue_last_studied_text': continue_last_studied_text,
         'continue_total_minutes': continue_total_minutes,
+
+        'xp_data': xp_data,
+        'earned_badges': earned_badges,
+        'next_badge': next_badge,
+        'weekly_goal_tasks': weekly_goal_tasks,
+        'weekly_goal_hours': weekly_goal_hours,
+        'task_goal_progress': min(task_goal_progress, 100),
+        'hours_goal_progress': min(hours_goal_progress, 100),
+        'motivation_title': motivation_title,
+        'motivation_text': motivation_text,
+        'week_days': week_days,
     }
 
     return render(request, 'dashboard.html', context)
+
 # ----------------------------
 # Study Rooms Helpers
 # ----------------------------
@@ -126,7 +170,6 @@ def serialize_room(room, current_user):
         'is_joined': is_joined,
         'is_owner': is_owner,
     }
-
 
 def calculate_room_stats_queryset(user, rooms_qs):
     total_rooms = rooms_qs.count()
@@ -251,9 +294,6 @@ def leave_room_ajax(request, room_id):
     except StudyRoom.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Room not found.'}, status=404)
 
-    if room.created_by_id == user.id:
-        return JsonResponse({'success': False, 'message': 'Room owner cannot leave the room. You can edit or delete it instead.'}, status=400)
-
     membership = RoomMember.objects.filter(room=room, user=user).first()
     if not membership:
         return JsonResponse({'success': False, 'message': 'You are not in this room.'}, status=400)
@@ -298,8 +338,6 @@ def room_details_ajax(request, room_id):
         'members': members,
         'extra': extra,
     })
-
-
 @require_POST
 def create_room_ajax(request):
     if not request.session.get('user_id'):
@@ -312,6 +350,7 @@ def create_room_ajax(request):
     exam_date = request.POST.get('exam_date', '').strip()
     max_members = request.POST.get('max_members', '').strip()
     description = request.POST.get('description', '').strip()
+
     session_goal = request.POST.get('session_goal', '').strip()
     scheduled_time = request.POST.get('scheduled_time', '').strip()
     duration = request.POST.get('duration', '').strip()
@@ -356,7 +395,6 @@ def create_room_ajax(request):
         'stats': calculate_room_stats_queryset(user, all_rooms_for_stats),
         'subjects': [subject.name for subject in subjects],
     })
-
 
 @require_POST
 def update_room_ajax(request, room_id):
@@ -421,34 +459,6 @@ def update_room_ajax(request, room_id):
         'subjects': [subject.name for subject in subjects],
     })
 
-
-@require_POST
-def delete_room_ajax(request, room_id):
-    if not request.session.get('user_id'):
-        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
-
-    user = User.objects.get(id=request.session['user_id'])
-
-    try:
-        room = StudyRoom.objects.get(id=room_id)
-    except StudyRoom.DoesNotExist:
-        return JsonResponse({'success': False, 'message': 'Room not found.'}, status=404)
-
-    if room.created_by_id != user.id:
-        return JsonResponse({'success': False, 'message': 'Only the room owner can delete this room.'}, status=403)
-
-    room.delete()
-
-    all_rooms_for_stats = StudyRoom.objects.select_related('subject', 'created_by').prefetch_related('memberships')
-    subjects = Subject.objects.all().order_by('name')
-
-    return JsonResponse({
-        'success': True,
-        'message': 'Room deleted successfully.',
-        'stats': calculate_room_stats_queryset(user, all_rooms_for_stats),
-        'subjects': [subject.name for subject in subjects],
-    })
-
 @require_POST
 def toggle_task_ajax(request, id):
     if not request.session.get('user_id'):
@@ -493,7 +503,33 @@ def toggle_task_ajax(request, id):
         return JsonResponse({'success': False, 'message': 'Task not found.'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
-    
+
+@require_POST
+def delete_room_ajax(request, room_id):
+    if not request.session.get('user_id'):
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
+
+    user = User.objects.get(id=request.session['user_id'])
+
+    try:
+        room = StudyRoom.objects.get(id=room_id)
+    except StudyRoom.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Room not found.'}, status=404)
+
+    if room.created_by_id != user.id:
+        return JsonResponse({'success': False, 'message': 'Only the room owner can delete this room.'}, status=403)
+
+    room.delete()
+
+    all_rooms_for_stats = StudyRoom.objects.select_related('subject', 'created_by').prefetch_related('memberships')
+    subjects = Subject.objects.all().order_by('name')
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Room deleted successfully.',
+        'stats': calculate_room_stats_queryset(user, all_rooms_for_stats),
+        'subjects': [subject.name for subject in subjects],
+    })
 
 @require_POST
 def add_study_session_ajax(request):
