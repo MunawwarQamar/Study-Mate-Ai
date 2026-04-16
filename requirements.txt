@@ -1,0 +1,9 @@
+Django>=5.0,<6.0
+Pillow>=12.0.0
+openai>=2.0.0
+python-dotenv>=1.0.0
+bcrypt>=5.0.0
+requests>=2.30.0
+httpx>=0.28.0
+django-anymail>=14.0
+anthropic>=0.80.0
