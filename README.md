@@ -24,18 +24,22 @@ StudyMate AI is a web-based platform that helps students manage their study sche
 - 📊 Dashboard — progress overview and streak tracking
 - 📧 Email notifications for study reminders
 - 🏆 Study Rooms — join or create rooms by subject with XP and earning badges
+-   Gamification - Badges, XP & Streaks
 - 📱 Fully responsive design using Bootstrap 5
 
 ---
 ## 🖼️ Screenshots
-
 | Dashboard | Study Plan | Study Rooms |
 |-----------|------------|-------------|
-| ![Dashboard](Screenshots/dashboard.png) | ![Study Plan](Screenshots/study-plan.png) | ![Rooms](Screenshots/room.png) |
+| ![Dashboard](Screenshots/dashboard.png) | ![Study Plan](Screenshots/study-plan.png) | ![Study Rooms](Screenshots/room.png) |
 
 | Subjects | Tasks | Statistics |
 |----------|-------|------------|
-| ![Subjects](Screenshots/subjects.png) | ![Tasks](Screenshots/tasks.png) | ![Statistics](Screenshots/statistic.png) | 
+| ![Subjects](Screenshots/subjects.png) | ![Tasks](Screenshots/tasks.png) | ![Statistics](Screenshots/statistic.png) |
+
+| Contact Us | Profile |
+|------------|---------|
+| ![Contact Us](Screenshots/contact-us.png) | ![Profile](Screenshots/profile.png) |
 
 
 
@@ -85,6 +89,8 @@ Study-Mate-Ai/
 ├── .gitignore
 ├── manage.py
 └── README.md
+---
+
 ## 🗄️ Database Models
 
 - *User* — Authentication and profile data
@@ -97,6 +103,9 @@ Study-Mate-Ai/
 - *Notification* — Email notification records
 - *StudyRoom* — Community study rooms
 - *RoomMember* — Room membership
+- *ContactMessage*
+- *Badge*
+- *UserBadge*
 
 ---
 
