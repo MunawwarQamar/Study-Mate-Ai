@@ -31,11 +31,11 @@ StudyMate AI is a web-based platform that helps students manage their study sche
 
 | Dashboard | Study Plan | Study Rooms |
 |-----------|------------|-------------|
-| ![Dashboard](screenshots/dashboard.png) | ![Study Plan](screenshots/study-plan.png) | ![Rooms](screenshots/rooms.png) |
+| ![Dashboard](Screenshots/dashboard.png) | ![Study Plan](Screenshots/study-plan.png) | ![Rooms](Screenshots/room.png) |
 
 | Subjects | Tasks | Statistics |
 |----------|-------|------------|
-| ![Subjects](screenshots/subjects.png) | ![Tasks](screenshots/study-tasks.png) | ![Statistics](screenshots/statistics.png) | 
+| ![Subjects](Screenshots/subjects.png) | ![Tasks](Screenshots/tasks.png) | ![Statistics](Screenshots/statistic.png) | 
 
 
 
