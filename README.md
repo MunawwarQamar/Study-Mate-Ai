@@ -30,8 +30,12 @@ StudyMate AI is a web-based platform that helps students manage their study sche
 ## 🖼️ Screenshots
 
 | Dashboard | Study Plan | Study Rooms |
-|-----------|-----------|-------------|
-| ![Dashboard](screenshots/dashboard.png) | ![Study Plan](screenshots/study-plan.png) | ![Rooms](screenshots/rooms.png) |   ![Subjects](screenshots/subjects.png) |   ![Tasks](screenshots/study-tasks.png) |   ![Statistics](screenshots/statistics.png) |   
+|-----------|------------|-------------|
+| ![Dashboard](screenshots/dashboard.png) | ![Study Plan](screenshots/study-plan.png) | ![Rooms](screenshots/rooms.png) |
+
+| Subjects | Tasks | Statistics |
+|----------|-------|------------|
+| ![Subjects](screenshots/subjects.png) | ![Tasks](screenshots/study-tasks.png) | ![Statistics](screenshots/statistics.png) | 
 
 
 
@@ -44,8 +48,8 @@ StudyMate AI is a web-based platform that helps students manage their study sche
 | MySQL | Database |
 | Bootstrap 5 | Frontend styling |
 | JavaScript / AJAX | Dynamic interactions |
-| Google Gemini API | AI study plan generation |
-| EmailJS | Email notifications |
+| GROQ API | AI study plan generation |
+| SMTP | Contact us Email |
 | AWS | Deployment |
 | Git / GitHub | Version control |
 
@@ -141,11 +145,13 @@ python manage.py runserver
 
 ---
 
-👥 Team
-Name | Role
-Majd --- Login & Registration, Profile page, Contact us page and the Public base ||
-Basel --- Subjects page,Study Plan AI page and the Tasks page ||
-Munnawwar --- Dashboard page, Statistic page and the Study Rooms page
+## 👥 Team
+
+| Name | Role |
+|------|------|
+| Majd | Login & Registration, Profile Page, Contact Us Page, Public Base Layout |
+| Basel | Subjects Page, AI Study Plan Page, Tasks Page |
+| Munnawwar | Dashboard Page, Statistics Page, Study Rooms Page |
 
 ---
 
@@ -156,3 +162,6 @@ Built in 10 days as part of Axsos Academy Group Project — April 2026
 
 ## 📄 License
 This project is for educational purposes.
+ 
+
+ ---
