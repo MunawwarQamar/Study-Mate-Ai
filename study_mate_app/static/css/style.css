@@ -251,24 +251,42 @@ body {
 }
 
 .active-tab {
-    background-color: #0D6EFD;
-    color: white;
+    background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;
+    color: white !important;
     border: none;
 }
 
 .inactive-tab {
-    background-color: #EEEFF0;
-    color: #000;
-    border: none;
+    background: #f8fafc !important;
+    color: var(--text-dark) !important;
+    border: 1px solid var(--border-light) !important;
 }
 
-#login-form,
-#register-form {
+.inactive-tab:hover {
+    background: var(--primary-light) !important;
+    color: var(--primary) !important;
+}
+
+#login-form .btn-primary,
+#register-form .btn-success {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    padding: 12px;
     transition: all 0.2s ease;
 }
 
+#login-form .btn-primary:hover,
+#register-form .btn-success:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+}
+
 .top-feature {
-    background: linear-gradient(to top left, #FEFFFF, #AFDDF4);
+    background: linear-gradient(135deg, rgba(79, 172, 254, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     border-radius: 24px;
 }
@@ -277,33 +295,73 @@ body {
     border-radius: 24px;
 }
 
-.public-nav a {
+.public-navbar {
+    background: var(--card-light);;
+    border-bottom: 1px solid rgba(79, 172, 254, 0.2);
+}
+
+.public-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     text-decoration: none;
 }
 
-.public-nav .nav-link {
-    text-decoration: none;
-    transition: color 0.2s;
-}
-
-.nav-item:hover {
-    background-color: lightblue;
-    border: 1px solid lightblue;
+.brand-logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(79, 172, 254, 0.4));
     border-radius: 8px;
 }
 
-.navbar-nav {
-    gap: 6px;
+.public-brand .brand-text {
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: bold;
+    font-size: 1.25rem;
 }
 
-.navbar-nav .nav-link {
-    padding: 6px 12px;
-    border-radius: 6px;
+.public-nav-link {
+    color: var(--text-dark) !important; 
+    font-weight: 500;
+    padding: 8px 16px !important;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin: 0 4px;
 }
 
-.navbar-nav .btn {
-    padding: 6px 12px;
-    border-radius: 6px;
+.public-nav-link:hover {
+    color: var(--primary) !important;
+    background: rgba(79, 172, 254, 0.1);
+}
+
+.btn-public-login {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white !important;
+    border: none;
+    padding: 8px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn-public-login:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+}
+
+/* Mobile Toggler */
+.navbar-toggler {
+    border-color: rgba(79, 172, 254, 0.3);
+}
+
+.navbar-toggler-icon {
+    filter: invert(1);
 }
 
 .top-home {
@@ -338,7 +396,7 @@ body {
 
 .hero {
     text-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-    background: linear-gradient(145deg, rgb(49, 49, 250), white);
+    background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
     color: white;
 }
 
