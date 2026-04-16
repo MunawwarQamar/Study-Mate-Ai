@@ -22,7 +22,6 @@ StudyMate AI is a web-based platform that helps students manage their study sche
 - 🤖 AI Study Plan Generation — personalized weekly plan based on subjects and available hours
 - ✅ Tasks Page — view all tasks with AJAX done/pending toggle
 - 📊 Dashboard — progress overview and streak tracking
-- 🌙 Dark Mode toggle
 - 📧 Email notifications for study reminders
 - 🏆 Study Rooms — join or create rooms by subject with XP and earning badges
 - 📱 Fully responsive design using Bootstrap 5
@@ -32,9 +31,8 @@ StudyMate AI is a web-based platform that helps students manage their study sche
 
 | Dashboard | Study Plan | Study Rooms |
 |-----------|-----------|-------------|
-| ![Dashboard](screenshots/dashboard.png) | ![Study Plan](screenshots/study-plan.png) | ![Rooms](screenshots/rooms.png) |
+| ![Dashboard](screenshots/dashboard.png) | ![Study Plan](screenshots/study-plan.png) | ![Rooms](screenshots/rooms.png) |   ![Subjects](screenshots/subjects.png) |   ![Tasks](screenshots/study-tasks.png) |   ![Statistics](screenshots/statistics.png) |   
 
-> *Note:* Add actual screenshots to a /screenshots folder and update paths above.
 
 
 ---
@@ -107,7 +105,7 @@ cd Study-Mate-Ai
 # 2. Create virtual environment
 python -m venv env
 env\Scripts\activate  # Windows
-# source env/bin/activate  # Mac/Linux
+source env/bin/activate  # Mac/Linux
 
 # 3. Install dependencies
 pip install -r requirements.txt
@@ -145,8 +143,8 @@ python manage.py runserver
 
 👥 Team
 Name | Role
-Majd --- Login & Registration, Profile page, Contact us page and the Public base
-Basel --- Subjects page,Study Plan AI page and the Tasks page
+Majd --- Login & Registration, Profile page, Contact us page and the Public base ||
+Basel --- Subjects page,Study Plan AI page and the Tasks page ||
 Munnawwar --- Dashboard page, Statistic page and the Study Rooms page
 
 ---
