@@ -24,6 +24,7 @@ StudyMate AI is a web-based platform that helps students manage their study sche
 - 📊 Dashboard — progress overview and streak tracking
 - 📧 Email notifications for study reminders
 - 🏆 Study Rooms — join or create rooms by subject with XP and earning badges
+-   Gamification - Badges, XP & Streaks
 - 📱 Fully responsive design using Bootstrap 5
 
 ---
@@ -35,7 +36,15 @@ StudyMate AI is a web-based platform that helps students manage their study sche
 
 | Subjects | Tasks | Statistics |
 |----------|-------|------------|
-| ![Subjects](Screenshots/subjects.png) | ![Tasks](Screenshots/tasks.png) | ![Statistics](Screenshots/statistic.png) | 
+| ![Subjects](Screenshots/subjects.png) | ![Tasks](Screenshots/tasks.png) | ![Statistics](Screenshots/statistic.png) |
+
+
+| Contact Us | Profile | 
+|----------|-------|------------|
+| ![Contact Us](Screenshots/contact-us.png) | ![Profile](Screenshots/profile.png) | 
+
+
+
 
 
 
