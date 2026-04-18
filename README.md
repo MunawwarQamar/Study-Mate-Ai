@@ -5,7 +5,8 @@
 ---
 
 ## 🚀 Live Demo
-> Coming soon — AWS Deployment
+> The project is successfully deployed on AWS and accessible at:
+> http://13.49.241.149/ ← Click to view live
 
 ---
 
