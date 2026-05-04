@@ -161,7 +161,7 @@ python manage.py runserver
 |------|------|
 | Majd | Login & Registration, Profile Page, Contact Us Page, Public Base Layout |
 | Basel | Subjects Page, AI Study Plan Page, Tasks Page |
-| Munnawwar | Dashboard Page, Statistics Page, Study Rooms Page |
+| Munawwar | Dashboard Page, Statistics Page, Study Rooms Page |
 
 ---
 
